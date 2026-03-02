@@ -4,6 +4,22 @@ import sqlite3
 app = Flask(__name__)
 app.secret_key = "secret123"
 
+def init_db():
+    conn = sqlite3.connect("database.db")
+    cur = conn.cursor()
+    # Replace these with your actual table names and columns!
+    cur.execute('''CREATE TABLE IF NOT EXISTS users 
+                   (id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                    name TEXT, email TEXT, password TEXT)''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS complaints 
+                   (id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                    subject TEXT, description TEXT, status TEXT)''')
+    conn.commit()
+    conn.close()
+
+# Run this once when the app starts
+init_db()
+
 @app.route("/")
 def home():
     return render_template("home.html")
