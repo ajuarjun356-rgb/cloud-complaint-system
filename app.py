@@ -1,24 +1,29 @@
-from flask import Flask, render_template, request, redirect, session
 import sqlite3
+import os
+from flask import Flask, render_template, request, redirect, session, url_for
 
 app = Flask(__name__)
-app.secret_key = "secret123"
+app.secret_key = "secret123"  # Required for sessions
 
+# --- DATABASE INITIALIZATION ---
 def init_db():
     conn = sqlite3.connect("database.db")
     cur = conn.cursor()
-    # Replace these with your actual table names and columns!
+    # Create users table
     cur.execute('''CREATE TABLE IF NOT EXISTS users 
                    (id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                    name TEXT, email TEXT, password TEXT)''')
+                    name TEXT, email TEXT UNIQUE, password TEXT)''')
+    # Create complaints table
     cur.execute('''CREATE TABLE IF NOT EXISTS complaints 
                    (id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                    subject TEXT, description TEXT, status TEXT)''')
+                    user_id INTEGER, subject TEXT, description TEXT, status TEXT DEFAULT 'Pending')''')
     conn.commit()
     conn.close()
 
-# Run this once when the app starts
+# Initialize the database immediately when the app starts
 init_db()
+
+# --- ROUTES ---
 
 @app.route("/")
 def home():
@@ -27,146 +32,79 @@ def home():
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
-        name = request.form["name"]
-        email = request.form["email"]
-        password = request.form["password"]
-
+        name = request.form.get("name")
+        email = request.form.get("email")
+        password = request.form.get("password")
+        
         try:
             conn = sqlite3.connect("database.db")
             cur = conn.cursor()
-            cur.execute("INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
-                        (name, email, password))
+            cur.execute("INSERT INTO users (name, email, password) VALUES (?, ?, ?)", (name, email, password))
             conn.commit()
-        except sqlite3.IntegrityError:
             conn.close()
-            return "This email is already registered! Please use a different email."
-        conn.close()
-        return redirect("/login")
-
+            return redirect(url_for("login"))
+        except sqlite3.IntegrityError:
+            return "Email already exists! Please go back and try a different one."
     return render_template("register.html")
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        email = request.form["email"]
-        password = request.form["password"]
-
+        email = request.form.get("email")
+        password = request.form.get("password")
+        
         conn = sqlite3.connect("database.db")
         cur = conn.cursor()
-
-        cur.execute(
-            "SELECT * FROM users WHERE email=? AND password=?",
-            (email, password)
-        )
+        cur.execute("SELECT * FROM users WHERE email = ? AND password = ?", (email, password))
         user = cur.fetchone()
         conn.close()
-
+        
         if user:
-            session["user_email"] = email
-            return redirect("/dashboard")
+            session["user_id"] = user[0]
+            session["user_name"] = user[1]
+            return redirect(url_for("dashboard"))
         else:
-            return "Invalid login"
-
+            return "Invalid Login Credentials. Please try again."
     return render_template("login.html")
-
-from flask import session
 
 @app.route("/dashboard")
 def dashboard():
-    if "user_email" not in session:
-        return redirect("/login")
-
-    email = session["user_email"]
-
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    
     conn = sqlite3.connect("database.db")
     cur = conn.cursor()
-
-    cur.execute(
-        "SELECT id, complaint, status FROM complaints WHERE user_email=?",
-        (email,)
-    )
-
-    complaints = cur.fetchall()
+    cur.execute("SELECT * FROM complaints WHERE user_id = ?", (session["user_id"],))
+    user_complaints = cur.fetchall()
     conn.close()
-
-    return render_template("dashboard.html", complaints=complaints, email=email)
-
+    
+    return render_template("dashboard.html", complaints=user_complaints, name=session["user_name"])
 
 @app.route("/add_complaint", methods=["GET", "POST"])
 def add_complaint():
-    if "user_email" not in session:
-        return redirect("/login")
-
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+        
     if request.method == "POST":
-        complaint = request.form["complaint"]
-        email = session["user_email"]
-
+        subject = request.form.get("subject")
+        description = request.form.get("description")
+        
         conn = sqlite3.connect("database.db")
         cur = conn.cursor()
-
-        cur.execute(
-            "INSERT INTO complaints (user_email, complaint, status) VALUES (?, ?, ?)",
-            (email, complaint, "Pending")
-        )
-
+        cur.execute("INSERT INTO complaints (user_id, subject, description) VALUES (?, ?, ?)", 
+                    (session["user_id"], subject, description))
         conn.commit()
         conn.close()
-
-        return redirect("/dashboard")
-
+        return redirect(url_for("dashboard"))
     return render_template("add_complaint.html")
-
-
-
-@app.route("/complaint", methods=["GET", "POST"])
-def complaint():
-    message = None
-
-    if request.method == "POST":
-        email = request.form["email"]
-        complaint_text = request.form["complaint"]
-
-        conn = sqlite3.connect("database.db")
-        cur = conn.cursor()
-
-        cur.execute("INSERT INTO complaints (user_email, complaint) VALUES (?, ?)",
-                    (email, complaint_text))
-
-        conn.commit()
-        conn.close()
-
-        message = "Complaint submitted successfully!"
-
-    return render_template("complaint.html", message=message)
-
-@app.route("/admin")
-def admin():
-    conn = sqlite3.connect("database.db")
-    cur = conn.cursor()
-    
-
-    cur.execute("SELECT * FROM complaints")
-    complaints = cur.fetchall()
-
-    conn.close()
-    return render_template("admin.html", complaints=complaints)
-
-@app.route("/resolve/<int:id>")
-def resolve(id):
-    conn = sqlite3.connect("database.db")
-    cur = conn.cursor()
-
-    cur.execute("UPDATE complaints SET status='Resolved' WHERE id=?", (id,))
-    conn.commit()
-    conn.close()
-
-    return redirect("/admin")
 
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect("/login")
+    return redirect(url_for("home"))
 
+# --- RENDER/CLOUD CONFIGURATION ---
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0")
-
+    # Get port from environment or default to 5000
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
