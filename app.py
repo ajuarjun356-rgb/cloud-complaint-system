@@ -14,6 +14,7 @@ def init_db():
                    (id INTEGER PRIMARY KEY AUTOINCREMENT, 
                     name TEXT, email TEXT UNIQUE, password TEXT)''')
     # Create complaints table
+    # Columns: 0:id, 1:user_id, 2:subject, 3:description, 4:status
     cur.execute('''CREATE TABLE IF NOT EXISTS complaints 
                    (id INTEGER PRIMARY KEY AUTOINCREMENT, 
                     user_id INTEGER, subject TEXT, description TEXT, status TEXT DEFAULT 'Pending')''')
@@ -74,6 +75,7 @@ def dashboard():
     
     conn = sqlite3.connect("database.db")
     cur = conn.cursor()
+    # Fetches only complaints belonging to the logged-in user
     cur.execute("SELECT * FROM complaints WHERE user_id = ?", (session["user_id"],))
     user_complaints = cur.fetchall()
     conn.close()
@@ -98,6 +100,20 @@ def add_complaint():
         return redirect(url_for("dashboard"))
     return render_template("add_complaint.html")
 
+# --- NEW DELETE ROUTE ---
+@app.route("/delete_complaint/<int:id>")
+def delete_complaint(id):
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    
+    conn = sqlite3.connect("database.db")
+    cur = conn.cursor()
+    # Security: It only deletes if the complaint ID matches the logged-in User's ID
+    cur.execute("DELETE FROM complaints WHERE id = ? AND user_id = ?", (id, session["user_id"]))
+    conn.commit()
+    conn.close()
+    return redirect(url_for("dashboard"))
+
 @app.route("/logout")
 def logout():
     session.clear()
@@ -105,6 +121,5 @@ def logout():
 
 # --- RENDER/CLOUD CONFIGURATION ---
 if __name__ == "__main__":
-    # Get port from environment or default to 5000
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
