@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Dashboard — ResolveIQ</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --ink:       #0b0f1a;
+            --ink-soft:  #3d4660;
+            --ink-muted: #8892a4;
+            --cream:     #f7f5f0;
+            --white:     #ffffff;
+            --gold:      #c9a84c;
+            --gold-lt:   #e8d5a3;
+            --border:    #e3e0d8;
+            --shadow:    0 4px 24px rgba(11,15,26,0.07);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; }
+
+        /* NAVBAR */
+        .navbar { background: var(--ink); padding: 0; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        .navbar .container-fluid { display: flex; align-items: center; justify-content: space-between; height: 62px; padding: 0 32px; }
+        .navbar-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        .brand-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--gold), #8b6914); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+        .brand-name { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; color: #fff; }
+
+        .agent-chip { display: flex; align-items: center; gap: 8px; background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.25); border-radius: 999px; padding: 4px 14px 4px 6px; }
+        .agent-avatar { width: 28px; height: 28px; background: linear-gradient(135deg, #2a9d8f, #1a6b64); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; }
+        .agent-label { font-size: 0.82rem; color: var(--gold-lt); font-weight: 600; }
+
+        .btn-logout { background: transparent; border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); border-radius: 8px; padding: 6px 16px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500; text-decoration: none; transition: all 0.2s; display: flex; align-items: center; gap: 7px; }
+        .btn-logout:hover { border-color: #e63946; color: #e63946; }
+
+        /* PAGE */
+        .page { padding: 32px; max-width: 1280px; margin: 0 auto; }
+
+        /* BANNER */
+        .agent-banner { background: linear-gradient(135deg, #0b1a18 0%, #0b0f1a 100%); border-radius: 18px; padding: 28px 32px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; position: relative; overflow: hidden; }
+        .agent-banner::before { content: ''; position: absolute; inset: 0; background-image: linear-gradient(rgba(42,157,143,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(42,157,143,0.06) 1px, transparent 1px); background-size: 36px 36px; }
+        .agent-banner::after { content: '🔧'; position: absolute; right: 40px; top: -10px; font-size: 110px; opacity: 0.04; pointer-events: none; }
+
+        .banner-text { position: relative; z-index: 1; }
+        .banner-eyebrow { font-size: 0.72rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #2a9d8f; margin-bottom: 6px; }
+        .banner-title { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
+        .banner-sub { font-size: 0.88rem; color: var(--ink-muted); }
+
+        /* STAT CARDS */
+        .stat-card { background: var(--white); border: 1px solid var(--border); border-radius: 14px; padding: 20px 22px; display: flex; align-items: center; gap: 16px; transition: all 0.22s; }
+        .stat-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+        .stat-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+        .stat-icon.total    { background: rgba(11,15,26,0.07); color: var(--ink); }
+        .stat-icon.pending  { background: #fff7e6; color: #b45309; }
+        .stat-icon.progress { background: #eff6ff; color: #1d4ed8; }
+        .stat-icon.resolved { background: #f0fdf4; color: #15803d; }
+        .stat-value { font-family: 'Playfair Display', serif; font-size: 1.7rem; font-weight: 700; color: var(--ink); line-height: 1; }
+        .stat-label { font-size: 0.8rem; color: var(--ink-muted); margin-top: 3px; }
+
+        /* TABLE */
+        .table-card { background: var(--white); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+        .table-header { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+        .table-heading { font-family: 'Playfair Display', serif; font-size: 1.05rem; font-weight: 700; color: var(--ink); }
+        .table-subhead { font-size: 0.8rem; color: var(--ink-muted); margin-top: 2px; }
+
+        table { width: 100%; border-collapse: collapse; }
+        thead tr { background: #fafaf8; }
+        thead th { padding: 11px 16px; font-size: 0.72rem; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--ink-muted); border-bottom: 1px solid var(--border); white-space: nowrap; }
+        tbody tr { border-bottom: 1px solid #f0ede8; transition: background 0.15s; }
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: #faf9f7; }
+        tbody td { padding: 13px 16px; font-size: 0.88rem; color: var(--ink); vertical-align: middle; }
+
+        .cmp-id { font-weight: 700; font-size: 0.8rem; color: var(--gold); letter-spacing: 0.5px; }
+        .complaint-title { font-weight: 500; }
+        .complaint-cat { font-size: 0.78rem; color: var(--ink-muted); margin-top: 2px; }
+        .user-name-cell { font-size: 0.85rem; font-weight: 500; }
+        .user-email-cell { font-size: 0.75rem; color: var(--ink-muted); }
+
+        /* PILLS */
+        .pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
+        .pill-dot { width: 6px; height: 6px; border-radius: 50%; }
+        .pill-low      { background: #f0fdf4; color: #15803d; } .pill-low .pill-dot { background: #15803d; }
+        .pill-medium   { background: #fffbeb; color: #b45309; } .pill-medium .pill-dot { background: #f59e0b; }
+        .pill-high     { background: #fff1f2; color: #be123c; } .pill-high .pill-dot { background: #e11d48; }
+        .pill-urgent   { background: var(--ink); color: var(--gold); } .pill-urgent .pill-dot { background: var(--gold); }
+        .pill-pending  { background: #fff7ed; color: #c2410c; } .pill-pending .pill-dot { background: #f97316; }
+        .pill-progress { background: #eff6ff; color: #1d4ed8; } .pill-progress .pill-dot { background: #3b82f6; }
+        .pill-resolved { background: #f0fdf4; color: #15803d; } .pill-resolved .pill-dot { background: #22c55e; }
+
+        /* ACTION FORM */
+        .action-form { display: flex; flex-direction: column; gap: 7px; min-width: 200px; }
+        .form-select-custom, .form-input-custom { padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.83rem; color: var(--ink); background: var(--cream); outline: none; transition: border-color 0.2s; width: 100%; }
+        .form-select-custom:focus, .form-input-custom:focus { border-color: #2a9d8f; background: var(--white); }
+        .form-input-custom::placeholder { color: var(--ink-muted); }
+        .btn-update { background: #1a6b64; color: #fff; border: none; border-radius: 8px; padding: 8px 14px; font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 0.82rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .btn-update:hover { background: #2a9d8f; }
+        .btn-view-details { background: transparent; color: var(--ink-muted); border: 1px solid var(--border); border-radius: 8px; padding: 7px 14px; font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 0.82rem; cursor: pointer; text-decoration: none; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .btn-view-details:hover { border-color: var(--ink); color: var(--ink); }
+
+        /* EMPTY */
+        .empty-state { text-align: center; padding: 64px 32px; }
+        .empty-icon { width: 64px; height: 64px; background: var(--cream); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; margin: 0 auto 18px; color: var(--ink-muted); }
+        .empty-title { font-weight: 700; font-size: 1rem; color: var(--ink); margin-bottom: 6px; }
+        .empty-sub { font-size: 0.85rem; color: var(--ink-muted); }
+
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in   { animation: fadeUp 0.5s ease both; }
+        .fade-in-1 { animation: fadeUp 0.5s 0.1s ease both; }
+        .fade-in-2 { animation: fadeUp 0.5s 0.2s ease both; }
+
+        @media (max-width: 768px) { .page { padding: 16px; } .agent-banner { flex-direction: column; gap: 16px; } }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">
+            <div class="brand-icon">⚖</div>
+            <span class="brand-name">ResolveIQ</span>
+        </a>
+        <div style="display:flex;align-items:center;gap:14px;">
+            <div class="agent-chip">
+                <div class="agent-avatar">{{ name[0]|upper }}</div>
+                <span class="agent-label">{{ name }} — Agent</span>
+            </div>
+            <a href="/logout" class="btn-logout">
+                <i class="fa-solid fa-right-from-bracket"></i> Logout
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="page">
+
+    <div class="agent-banner fade-in">
+        <div class="banner-text">
+            <div class="banner-eyebrow">Agent Panel</div>
+            <div class="banner-title">My Assigned Complaints</div>
+            <div class="banner-sub">Update status and add remarks for complaints assigned to you.</div>
+        </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="row g-3 mb-4 fade-in-1">
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon total"><i class="fa-solid fa-layer-group"></i></div>
+                <div><div class="stat-value">{{ total }}</div><div class="stat-label">Assigned</div></div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon pending"><i class="fa-solid fa-hourglass-half"></i></div>
+                <div><div class="stat-value">{{ pending }}</div><div class="stat-label">Pending</div></div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon progress"><i class="fa-solid fa-rotate"></i></div>
+                <div><div class="stat-value">{{ in_progress }}</div><div class="stat-label">In Progress</div></div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon resolved"><i class="fa-solid fa-circle-check"></i></div>
+                <div><div class="stat-value">{{ resolved }}</div><div class="stat-label">Resolved</div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-card fade-in-2">
+        <div class="table-header">
+            <div>
+                <div class="table-heading">Assigned Complaints</div>
+                <div class="table-subhead">Only complaints assigned to you by admin are shown here</div>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>User</th>
+                        <th>Complaint</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Update</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in complaints %}
+                    <tr>
+                        <td><span class="cmp-id">CMP-{{ "%03d"|format(c['id']) }}</span></td>
+
+                        <td>
+                            <div class="user-name-cell">{{ c['user_name'] or 'Unknown' }}</div>
+                            <div class="user-email-cell">{{ c['user_email'] or '' }}</div>
+                        </td>
+
+                        <td>
+                            <div class="complaint-title">{{ c['subject'] }}</div>
+                            <div class="complaint-cat">{{ c['category'] }}</div>
+                        </td>
+
+                        <td>
+                            {% if c['priority'] == "Urgent" %}
+                                <span class="pill pill-urgent"><span class="pill-dot"></span>Urgent</span>
+                            {% elif c['priority'] == "High" %}
+                                <span class="pill pill-high"><span class="pill-dot"></span>High</span>
+                            {% elif c['priority'] == "Medium" %}
+                                <span class="pill pill-medium"><span class="pill-dot"></span>Medium</span>
+                            {% else %}
+                                <span class="pill pill-low"><span class="pill-dot"></span>Low</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if c['status'] == "Pending" %}
+                                <span class="pill pill-pending"><span class="pill-dot"></span>Pending</span>
+                            {% elif c['status'] == "In Progress" %}
+                                <span class="pill pill-progress"><span class="pill-dot"></span>In Progress</span>
+                            {% else %}
+                                <span class="pill pill-resolved"><span class="pill-dot"></span>Resolved</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            <form method="POST" action="/update_complaint/{{ c['id'] }}">
+                                <div class="action-form">
+                                    <select name="status" class="form-select-custom">
+                                        <option value="Pending"     {% if c['status']=='Pending' %}selected{% endif %}>⏳ Pending</option>
+                                        <option value="In Progress" {% if c['status']=='In Progress' %}selected{% endif %}>🔄 In Progress</option>
+                                        <option value="Resolved"    {% if c['status']=='Resolved' %}selected{% endif %}>✅ Resolved</option>
+                                    </select>
+                                    <input type="text" name="remark" class="form-input-custom"
+                                        placeholder="Add remark..."
+                                        value="{{ c['admin_remark'] or '' }}">
+                                    <button type="submit" class="btn-update">
+                                        <i class="fa-solid fa-floppy-disk"></i> Update
+                                    </button>
+                                    <a href="/complaint/{{ c['id'] }}" class="btn-view-details">
+                                        <i class="fa-solid fa-eye"></i> View
+                                    </a>
+                                </div>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <div class="empty-icon"><i class="fa-solid fa-inbox"></i></div>
+                                <div class="empty-title">No complaints assigned yet</div>
+                                <div class="empty-sub">The admin will assign complaints to you shortly.</div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

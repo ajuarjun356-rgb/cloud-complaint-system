@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complaint Details — ResolveIQ</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --ink:       #0b0f1a;
+            --ink-soft:  #3d4660;
+            --ink-muted: #8892a4;
+            --cream:     #f7f5f0;
+            --white:     #ffffff;
+            --gold:      #c9a84c;
+            --gold-lt:   #e8d5a3;
+            --border:    #e3e0d8;
+            --shadow:    0 4px 24px rgba(11,15,26,0.07);
+            --shadow-lg: 0 16px 48px rgba(11,15,26,0.12);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--cream);
+            color: var(--ink);
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: var(--ink);
+            padding: 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .navbar .container-fluid {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 62px;
+            padding: 0 32px;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .brand-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--gold), #8b6914);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+        }
+
+        .brand-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .btn-back {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.7);
+            border-radius: 8px;
+            padding: 6px 16px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .btn-back:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        .page {
+            padding: 32px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .detail-banner {
+            background: var(--ink);
+            border-radius: 18px;
+            padding: 28px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .detail-banner::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(201,168,76,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(201,168,76,0.05) 1px, transparent 1px);
+            background-size: 36px 36px;
+        }
+
+        .detail-banner::after {
+            content: '📋';
+            position: absolute;
+            right: 32px;
+            top: 0;
+            font-size: 100px;
+            opacity: 0.04;
+            pointer-events: none;
+        }
+
+        .banner-left,
+        .banner-actions {
+            position: relative;
+            z-index: 1;
+        }
+
+        .banner-eyebrow {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--gold);
+            margin-bottom: 6px;
+        }
+
+        .banner-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .banner-sub {
+            font-size: 0.88rem;
+            color: var(--ink-muted);
+        }
+
+        .banner-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-dashboard {
+            background: var(--gold);
+            color: var(--ink);
+            border: none;
+            border-radius: 9px;
+            padding: 10px 20px;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 700;
+            font-size: 0.88rem;
+            text-decoration: none;
+            transition: all 0.22s;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .btn-dashboard:hover {
+            background: var(--gold-lt);
+            color: var(--ink);
+        }
+
+        .btn-delete {
+            background: transparent;
+            border: 1px solid rgba(231,57,70,0.4);
+            color: #e63946;
+            border-radius: 9px;
+            padding: 10px 20px;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 600;
+            font-size: 0.88rem;
+            text-decoration: none;
+            transition: all 0.22s;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .btn-delete:hover {
+            background: #e63946;
+            color: #fff;
+            border-color: #e63946;
+        }
+
+        .card-box {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .card-header-bar {
+            padding: 18px 22px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-header-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 9px;
+            background: var(--ink);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: var(--gold);
+            flex-shrink: 0;
+        }
+
+        .card-header-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+        .card-body-pad {
+            padding: 22px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .info-box {
+            background: var(--cream);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+        }
+
+        .info-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: var(--ink-muted);
+            margin-bottom: 6px;
+        }
+
+        .info-value {
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--ink);
+            word-break: break-word;
+        }
+
+        .cmp-id-value {
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 700;
+            color: var(--gold);
+            font-size: 0.95rem;
+        }
+
+        .desc-box {
+            background: var(--cream);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 0.9rem;
+            line-height: 1.75;
+            color: var(--ink-soft);
+            margin-bottom: 20px;
+        }
+
+        .attach-box {
+            background: var(--cream);
+            border: 1px dashed var(--border);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .attach-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--ink);
+            font-weight: 600;
+            font-size: 0.88rem;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .attach-link:hover {
+            color: var(--gold);
+        }
+
+        .attach-link-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--ink);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            color: var(--gold);
+            flex-shrink: 0;
+        }
+
+        .attach-preview {
+            width: 100%;
+            max-height: 260px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            margin-top: 12px;
+        }
+
+        .no-attach {
+            font-size: 0.85rem;
+            color: var(--ink-muted);
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        .pill-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .pill-low { background: #f0fdf4; color: #15803d; }
+        .pill-low .pill-dot { background: #15803d; }
+
+        .pill-medium { background: #fffbeb; color: #b45309; }
+        .pill-medium .pill-dot { background: #f59e0b; }
+
+        .pill-high { background: #fff1f2; color: #be123c; }
+        .pill-high .pill-dot { background: #e11d48; }
+
+        .pill-urgent { background: var(--ink); color: var(--gold); }
+        .pill-urgent .pill-dot { background: var(--gold); }
+
+        .pill-pending { background: #fff7ed; color: #c2410c; }
+        .pill-pending .pill-dot { background: #f97316; }
+
+        .pill-progress { background: #eff6ff; color: #1d4ed8; }
+        .pill-progress .pill-dot { background: #3b82f6; }
+
+        .pill-resolved { background: #f0fdf4; color: #15803d; }
+        .pill-resolved .pill-dot { background: #22c55e; }
+
+        .progress-section {
+            margin-bottom: 24px;
+        }
+
+        .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .progress-label-item {
+            font-size: 0.75rem;
+            color: var(--ink-muted);
+            text-align: center;
+            flex: 1;
+        }
+
+        .progress-label-item.active {
+            color: var(--gold);
+            font-weight: 700;
+        }
+
+        .progress-track {
+            background: #ede9e3;
+            border-radius: 999px;
+            height: 8px;
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--gold), var(--gold-lt));
+            border-radius: 999px;
+            transition: width 1s ease;
+        }
+
+        .progress-pct {
+            font-size: 0.75rem;
+            color: var(--ink-muted);
+            text-align: right;
+        }
+
+        .timeline {
+            padding: 0;
+            list-style: none;
+            margin: 0;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 14px;
+            padding-bottom: 20px;
+            position: relative;
+        }
+
+        .timeline-item:last-child {
+            padding-bottom: 0;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 11px;
+            top: 24px;
+            width: 1px;
+            bottom: 0;
+            background: var(--border);
+        }
+
+        .timeline-item:last-child::before {
+            display: none;
+        }
+
+        .timeline-dot-wrap {
+            flex-shrink: 0;
+            padding-top: 2px;
+        }
+
+        .timeline-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--cream);
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: var(--ink-muted);
+            transition: all 0.3s;
+        }
+
+        .timeline-dot.done {
+            background: var(--gold);
+            border-color: var(--gold);
+            color: var(--ink);
+        }
+
+        .timeline-dot.current {
+            background: var(--ink);
+            border-color: var(--gold);
+            color: var(--gold);
+            box-shadow: 0 0 0 4px rgba(201,168,76,0.15);
+        }
+
+        .timeline-content {
+            flex: 1;
+        }
+
+        .timeline-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--ink);
+            margin-bottom: 3px;
+        }
+
+        .timeline-title.muted {
+            color: var(--ink-muted);
+        }
+
+        .timeline-desc {
+            font-size: 0.8rem;
+            color: var(--ink-muted);
+            line-height: 1.5;
+        }
+
+        .log-item {
+            background: var(--cream);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 10px;
+        }
+
+        .log-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .log-status-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .log-remark {
+            font-size: 0.85rem;
+            color: var(--ink-soft);
+            margin-bottom: 6px;
+        }
+
+        .log-time {
+            font-size: 0.75rem;
+            color: var(--ink-muted);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .empty-logs {
+            text-align: center;
+            padding: 32px 16px;
+            color: var(--ink-muted);
+        }
+
+        .empty-logs-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--cream);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin: 0 auto 12px;
+            color: var(--ink-muted);
+        }
+
+        .page-footer {
+            text-align: center;
+            margin-top: 32px;
+            font-size: 0.8rem;
+            color: var(--ink-muted);
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in { animation: fadeUp 0.5s ease both; }
+        .fade-in-1 { animation: fadeUp 0.5s 0.1s ease both; }
+        .fade-in-2 { animation: fadeUp 0.5s 0.2s ease both; }
+
+        @media (max-width: 768px) {
+            .page { padding: 16px; }
+            .detail-banner { padding: 22px 20px; }
+            .info-grid { grid-template-columns: 1fr; }
+            .navbar .container-fluid { padding: 0 16px; }
+        }
+    </style>
+</head>
+<body>
+
+{% set complaint_id          = complaint[0] if complaint and complaint|length > 0 else 'N/A' %}
+{% set complaint_subject     = complaint[2] if complaint and complaint|length > 2 else 'No subject' %}
+{% set complaint_description = complaint[3] if complaint and complaint|length > 3 and complaint[3] else 'No description provided.' %}
+{% set complaint_category    = complaint[4] if complaint and complaint|length > 4 and complaint[4] else 'Not specified' %}
+{% set complaint_priority    = complaint[5] if complaint and complaint|length > 5 and complaint[5] else 'Medium' %}
+{% set complaint_status      = complaint[6] if complaint and complaint|length > 6 and complaint[6] else 'Pending' %}
+{% set complaint_date        = complaint[7] if complaint and complaint|length > 7 and complaint[7] else 'Not available' %}
+{% set complaint_file        = complaint[8] if complaint and complaint|length > 8 and complaint[8] else '' %}
+{% set admin_remark          = complaint[9] if complaint and complaint|length > 9 and complaint[9] else '' %}
+
+<nav class="navbar">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">
+            <div class="brand-icon">⚖</div>
+            <span class="brand-name">ResolveIQ</span>
+        </a>
+        <a href="/dashboard" class="btn-back">
+            <i class="fa-solid fa-arrow-left"></i> Dashboard
+        </a>
+    </div>
+</nav>
+
+<div class="page">
+
+    <div class="detail-banner fade-in">
+        <div class="banner-left">
+            <div class="banner-eyebrow">Complaint Details</div>
+            <div class="banner-title">
+                {% if complaint_id != 'N/A' %}CMP-{{ "%03d"|format(complaint_id) }}{% else %}N/A{% endif %}
+            </div>
+            <div class="banner-sub">{{ complaint_subject }}</div>
+        </div>
+
+        <div class="banner-actions">
+            <a href="/dashboard" class="btn-dashboard">
+                <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+            </a>
+
+            {% if complaint and complaint|length > 0 %}
+            <a href="/delete_complaint/{{ complaint_id }}" class="btn-delete"
+               onclick="return confirm('Are you sure you want to delete this complaint?')">
+                <i class="fa-solid fa-trash"></i> Delete
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row g-4 fade-in-1">
+
+        <div class="col-lg-7">
+            <div class="card-box">
+                <div class="card-header-bar">
+                    <div class="card-header-icon"><i class="fa-solid fa-file-lines"></i></div>
+                    <div class="card-header-title">Complaint Information</div>
+                </div>
+
+                <div class="card-body-pad">
+                    <div class="info-grid">
+                        <div class="info-box">
+                            <div class="info-label">Complaint ID</div>
+                            <div class="info-value cmp-id-value">
+                                {% if complaint_id != 'N/A' %}CMP-{{ "%03d"|format(complaint_id) }}{% else %}N/A{% endif %}
+                            </div>
+                        </div>
+
+                        <div class="info-box">
+                            <div class="info-label">Category</div>
+                            <div class="info-value">{{ complaint_category }}</div>
+                        </div>
+
+                        <div class="info-box">
+                            <div class="info-label">Priority</div>
+                            <div class="info-value">
+                                {% if complaint_priority == 'Low' %}
+                                    <span class="pill pill-low"><span class="pill-dot"></span>Low</span>
+                                {% elif complaint_priority == 'Medium' %}
+                                    <span class="pill pill-medium"><span class="pill-dot"></span>Medium</span>
+                                {% elif complaint_priority == 'High' %}
+                                    <span class="pill pill-high"><span class="pill-dot"></span>High</span>
+                                {% else %}
+                                    <span class="pill pill-urgent"><span class="pill-dot"></span>Urgent</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="info-box">
+                            <div class="info-label">Status</div>
+                            <div class="info-value">
+                                {% if complaint_status == 'Pending' %}
+                                    <span class="pill pill-pending"><span class="pill-dot"></span>Pending</span>
+                                {% elif complaint_status == 'In Progress' %}
+                                    <span class="pill pill-progress"><span class="pill-dot"></span>In Progress</span>
+                                {% else %}
+                                    <span class="pill pill-resolved"><span class="pill-dot"></span>Resolved</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="info-box">
+                            <div class="info-label">Date Submitted</div>
+                            <div class="info-value">{{ complaint_date }}</div>
+                        </div>
+
+                        <div class="info-box">
+                            <div class="info-label">Subject</div>
+                            <div class="info-value">{{ complaint_subject }}</div>
+                        </div>
+                    </div>
+
+                    <div class="info-label mb-2">Description</div>
+                    <div class="desc-box">{{ complaint_description }}</div>
+
+                    <div class="info-label mb-2">Attachment</div>
+                    <div class="attach-box mb-4">
+                        {% if complaint_file %}
+                            {% set file_name = complaint_file.split('/')[-1].lower() %}
+                            <a href="/{{ complaint_file }}" target="_blank" class="attach-link">
+                                <div class="attach-link-icon">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                </div>
+                                Open Uploaded File
+                            </a>
+
+                            {% if file_name.endswith('.png') or file_name.endswith('.jpg') or file_name.endswith('.jpeg') or file_name.endswith('.webp') %}
+                                <img src="/{{ complaint_file }}" class="attach-preview" alt="Attachment Preview">
+                            {% endif %}
+                        {% else %}
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <div style="width:36px;height:36px;background:var(--cream);border-radius:9px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--ink-muted);font-size:16px;">
+                                    <i class="fa-regular fa-file"></i>
+                                </div>
+                                <span class="no-attach">No file uploaded for this complaint.</span>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    {% if admin_remark %}
+                    <div class="info-label mb-2">Admin Remark</div>
+                    <div class="desc-box" style="border-left: 3px solid var(--gold); margin-bottom: 0;">
+                        {{ admin_remark }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+
+            <div class="card-box mb-4">
+                <div class="card-header-bar">
+                    <div class="card-header-icon"><i class="fa-solid fa-chart-line"></i></div>
+                    <div class="card-header-title">Progress Timeline</div>
+                </div>
+
+                <div class="card-body-pad">
+                    {% if complaint_status == 'Pending' %}
+                        {% set pct = 33 %}
+                    {% elif complaint_status == 'In Progress' %}
+                        {% set pct = 66 %}
+                    {% else %}
+                        {% set pct = 100 %}
+                    {% endif %}
+
+                    <div class="progress-section">
+                        <div class="progress-labels">
+                            <div class="progress-label-item {% if complaint_status == 'Pending' %}active{% endif %}">Submitted</div>
+                            <div class="progress-label-item {% if complaint_status == 'In Progress' %}active{% endif %}">In Progress</div>
+                            <div class="progress-label-item {% if complaint_status == 'Resolved' %}active{% endif %}">Resolved</div>
+                        </div>
+                        <div class="progress-track">
+                            <div class="progress-fill" style="width: {{ pct }}%;"></div>
+                        </div>
+                        <div class="progress-pct">{{ pct }}% complete</div>
+                    </div>
+
+                    <ul class="timeline">
+                        <li class="timeline-item">
+                            <div class="timeline-dot-wrap">
+                                <div class="timeline-dot done"><i class="fa-solid fa-check"></i></div>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Submitted</div>
+                                <div class="timeline-desc">Complaint registered successfully in the system.</div>
+                            </div>
+                        </li>
+
+                        <li class="timeline-item">
+                            <div class="timeline-dot-wrap">
+                                {% if complaint_status == 'In Progress' %}
+                                    <div class="timeline-dot current"><i class="fa-solid fa-rotate"></i></div>
+                                {% elif complaint_status == 'Resolved' %}
+                                    <div class="timeline-dot done"><i class="fa-solid fa-check"></i></div>
+                                {% else %}
+                                    <div class="timeline-dot"><i class="fa-solid fa-rotate"></i></div>
+                                {% endif %}
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title {% if complaint_status == 'Pending' %}muted{% endif %}">In Progress</div>
+                                <div class="timeline-desc">Admin or staff team is reviewing your issue.</div>
+                            </div>
+                        </li>
+
+                        <li class="timeline-item">
+                            <div class="timeline-dot-wrap">
+                                {% if complaint_status == 'Resolved' %}
+                                    <div class="timeline-dot done"><i class="fa-solid fa-check"></i></div>
+                                {% else %}
+                                    <div class="timeline-dot"><i class="fa-solid fa-circle-check"></i></div>
+                                {% endif %}
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title {% if complaint_status != 'Resolved' %}muted{% endif %}">Resolved</div>
+                                <div class="timeline-desc">Complaint marked as completed and closed.</div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card-box">
+                <div class="card-header-bar">
+                    <div class="card-header-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                    <div class="card-header-title">Activity Log</div>
+                </div>
+
+                <div class="card-body-pad">
+                    {% if logs %}
+                        {% for log in logs %}
+                        <div class="log-item">
+                            <div class="log-status-row">
+                                {% if log[0] == 'Pending' %}
+                                    <span class="pill pill-pending"><span class="pill-dot"></span>Pending</span>
+                                {% elif log[0] == 'In Progress' %}
+                                    <span class="pill pill-progress"><span class="pill-dot"></span>In Progress</span>
+                                {% elif log[0] == 'Resolved' %}
+                                    <span class="pill pill-resolved"><span class="pill-dot"></span>Resolved</span>
+                                {% else %}
+                                    <span class="pill pill-pending"><span class="pill-dot"></span>{{ log[0] }}</span>
+                                {% endif %}
+                            </div>
+
+                            <div class="log-remark">
+                                {{ log[1] if log|length > 1 and log[1] else 'No remark provided.' }}
+                            </div>
+
+                            <div class="log-time">
+                                <i class="fa-regular fa-clock"></i>
+                                {{ log[2] if log|length > 2 else '' }}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-logs">
+                            <div class="empty-logs-icon"><i class="fa-regular fa-clock"></i></div>
+                            <div style="font-weight:600; font-size:0.9rem; color:var(--ink); margin-bottom:4px;">No activity yet</div>
+                            <div style="font-size:0.82rem;">Updates will appear here when admin takes action.</div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+
+</html>

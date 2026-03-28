@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard — ResolveIQ</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --ink:       #0b0f1a;
+            --ink-soft:  #3d4660;
+            --ink-muted: #8892a4;
+            --cream:     #f7f5f0;
+            --white:     #ffffff;
+            --gold:      #c9a84c;
+            --gold-lt:   #e8d5a3;
+            --border:    #e3e0d8;
+            --shadow:    0 4px 24px rgba(11,15,26,0.07);
+            --shadow-lg: 0 16px 48px rgba(11,15,26,0.12);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--cream); color: var(--ink); min-height: 100vh;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            background: var(--ink); padding: 0;
+            position: sticky; top: 0; z-index: 100;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .navbar .container-fluid {
+            display: flex; align-items: center;
+            justify-content: space-between; height: 62px; padding: 0 32px;
+        }
+
+        .navbar-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+
+        .brand-icon {
+            width: 32px; height: 32px;
+            background: linear-gradient(135deg, var(--gold), #8b6914);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; font-size: 15px;
+        }
+
+        .brand-name { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; color: #fff; }
+
+        .nav-right { display: flex; align-items: center; gap: 14px; }
+
+        .admin-chip {
+            display: flex; align-items: center; gap: 8px;
+            background: rgba(201,168,76,0.12);
+            border: 1px solid rgba(201,168,76,0.25);
+            border-radius: 999px; padding: 4px 14px 4px 6px;
+        }
+
+        .admin-avatar {
+            width: 28px; height: 28px;
+            background: linear-gradient(135deg, var(--gold), #8b6914);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 11px; font-weight: 700; color: var(--ink);
+        }
+
+        .admin-label { font-size: 0.82rem; color: var(--gold); font-weight: 600; }
+
+        .btn-logout {
+            background: transparent; border: 1px solid rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.7); border-radius: 8px; padding: 6px 16px;
+            font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500;
+            text-decoration: none; transition: all 0.2s;
+            display: flex; align-items: center; gap: 7px;
+        }
+        .btn-logout:hover { border-color: #e63946; color: #e63946; }
+
+        /* PAGE */
+        .page { padding: 32px; max-width: 1500px; margin: 0 auto; }
+
+        /* BANNER */
+        .admin-banner {
+            background: var(--ink); border-radius: 18px; padding: 28px 32px;
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 24px; position: relative; overflow: hidden;
+        }
+
+        .admin-banner::before {
+            content: ''; position: absolute; inset: 0;
+            background-image:
+                linear-gradient(rgba(201,168,76,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(201,168,76,0.05) 1px, transparent 1px);
+            background-size: 36px 36px;
+        }
+
+        .admin-banner::after {
+            content: '⚙'; position: absolute; right: 40px; top: -10px;
+            font-size: 110px; opacity: 0.03; pointer-events: none;
+        }
+
+        .banner-text { position: relative; z-index: 1; }
+        .banner-eyebrow { font-size: 0.72rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; }
+        .banner-title { font-family: 'Playfair Display', serif; font-size: 1.7rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
+        .banner-sub { font-size: 0.88rem; color: var(--ink-muted); }
+
+        .banner-right { position: relative; z-index: 1; text-align: right; }
+        .banner-date { font-size: 0.8rem; color: var(--ink-muted); margin-bottom: 4px; }
+        .banner-time { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--gold); font-weight: 700; }
+
+        /* STAT CARDS */
+        .stat-card {
+            background: var(--white); border: 1px solid var(--border);
+            border-radius: 14px; padding: 22px;
+            display: flex; align-items: center; gap: 16px;
+            transition: all 0.22s; height: 100%;
+        }
+        .stat-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+
+        .stat-icon {
+            width: 48px; height: 48px; border-radius: 13px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; flex-shrink: 0;
+        }
+
+        .stat-icon.total    { background: rgba(11,15,26,0.06); color: var(--ink); }
+        .stat-icon.pending  { background: #fff7ed; color: #c2410c; }
+        .stat-icon.progress { background: #eff6ff; color: #1d4ed8; }
+        .stat-icon.resolved { background: #f0fdf4; color: #15803d; }
+        .stat-icon.urgent   { background: #fff1f2; color: #be123c; }
+        .stat-icon.today    { background: #f5f3ff; color: #6d28d9; }
+
+        .stat-value { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700; color: var(--ink); line-height: 1; }
+        .stat-label { font-size: 0.8rem; color: var(--ink-muted); margin-top: 4px; }
+
+        /* CARDS */
+        .table-card, .summary-card {
+            background: var(--white); border: 1px solid var(--border);
+            border-radius: 16px; overflow: hidden; margin-top: 24px;
+        }
+
+        .table-header, .summary-header {
+            padding: 20px 24px; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            flex-wrap: wrap; gap: 12px;
+        }
+
+        .table-heading, .summary-heading { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; color: var(--ink); }
+        .table-subhead, .summary-subhead { font-size: 0.8rem; color: var(--ink-muted); margin-top: 2px; }
+
+        .complaint-count { background: var(--ink); color: var(--gold); border-radius: 999px; padding: 4px 14px; font-size: 0.8rem; font-weight: 700; }
+
+        /* CATEGORY SUMMARY */
+        .summary-body { padding: 20px 24px; display: flex; flex-wrap: wrap; gap: 10px; }
+
+        .summary-pill {
+            background: #faf9f7; color: var(--ink); border: 1px solid var(--border);
+            border-radius: 999px; padding: 8px 16px; font-size: 0.82rem; font-weight: 600;
+            display: flex; align-items: center; gap: 7px; transition: all 0.2s; cursor: pointer;
+        }
+
+        .summary-pill:hover { border-color: var(--gold); background: rgba(201,168,76,0.07); }
+
+        .summary-pill-count {
+            background: var(--ink); color: var(--gold);
+            border-radius: 999px; padding: 1px 8px; font-size: 0.72rem; font-weight: 700;
+        }
+
+        /* RESOLUTION METER */
+        .resolution-wrap { padding: 16px 24px; border-bottom: 1px solid var(--border); background: #fcfbf9; }
+        .resolution-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+        .resolution-item { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 120px; }
+        .resolution-label-text { font-size: 0.75rem; color: var(--ink-muted); white-space: nowrap; }
+        .resolution-bar-outer { flex: 1; height: 6px; background: #ede9e3; border-radius: 999px; overflow: hidden; min-width: 60px; }
+        .resolution-bar-inner { height: 100%; border-radius: 999px; transition: width 1s ease; }
+        .resolution-pct { font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
+
+        /* FILTERS BAR */
+        .filters-bar { padding: 18px 24px; border-bottom: 1px solid var(--border); background: #fcfbf9; }
+
+        .filter-control { min-width: 180px; }
+
+        .btn-clear-filters {
+            background: transparent; border: 1px solid var(--border);
+            color: var(--ink-muted); border-radius: 8px; padding: 7px 14px;
+            font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 500;
+            cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;
+            white-space: nowrap;
+        }
+        .btn-clear-filters:hover { border-color: var(--ink); color: var(--ink); }
+
+        .btn-export {
+            background: var(--ink); color: var(--gold);
+            border: none; border-radius: 8px; padding: 7px 16px;
+            font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 600;
+            cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;
+            white-space: nowrap;
+        }
+        .btn-export:hover { background: var(--ink-soft); }
+
+        .filter-visible-count { font-size: 0.8rem; color: var(--ink-muted); white-space: nowrap; padding: 4px 0; }
+
+        /* TABLE */
+        table { width: 100%; border-collapse: collapse; }
+        thead tr { background: #fafaf8; }
+
+        thead th {
+            padding: 11px 16px; font-size: 0.7rem; font-weight: 700;
+            letter-spacing: 1.2px; text-transform: uppercase;
+            color: var(--ink-muted); border-bottom: 1px solid var(--border); white-space: nowrap;
+        }
+
+        tbody tr { border-bottom: 1px solid #f0ede8; transition: background 0.15s; }
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: #faf9f7; }
+
+        tbody td { padding: 14px 16px; font-size: 0.87rem; color: var(--ink); vertical-align: middle; }
+
+        .cmp-id { font-weight: 700; font-size: 0.78rem; color: var(--gold); letter-spacing: 0.5px; white-space: nowrap; }
+
+        .user-cell { display: flex; align-items: center; gap: 9px; }
+
+        .user-mini-avatar {
+            width: 30px; height: 30px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--ink), var(--ink-soft));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; font-weight: 700; color: var(--gold); flex-shrink: 0;
+        }
+
+        .user-mini-name { font-weight: 500; font-size: 0.87rem; }
+        .user-mini-email { font-size: 0.76rem; color: var(--ink-muted); margin-top: 2px; }
+
+        .complaint-title { font-weight: 600; }
+        .complaint-desc { font-size: 0.78rem; color: var(--ink-muted); margin-top: 4px; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .attachment-link {
+            text-decoration: none; color: var(--ink); font-weight: 600;
+            border: 1px solid var(--border); padding: 6px 10px; border-radius: 8px;
+            display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; transition: all 0.2s;
+        }
+        .attachment-link:hover { border-color: var(--gold); color: var(--gold); }
+
+        .no-file { color: var(--ink-muted); font-size: 0.78rem; }
+        .date-cell { font-size: 0.78rem; color: var(--ink-muted); white-space: nowrap; }
+
+        /* PILLS */
+        .pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; border-radius: 999px; font-size: 0.73rem; font-weight: 600; white-space: nowrap; }
+        .pill-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+        .pill-low      { background: #f0fdf4; color: #15803d; }
+        .pill-low .pill-dot { background: #15803d; }
+        .pill-medium   { background: #fffbeb; color: #b45309; }
+        .pill-medium .pill-dot { background: #f59e0b; }
+        .pill-high     { background: #fff1f2; color: #be123c; }
+        .pill-high .pill-dot { background: #e11d48; }
+        .pill-urgent   { background: var(--ink); color: var(--gold); }
+        .pill-urgent .pill-dot { background: var(--gold); }
+        .pill-pending  { background: #fff7ed; color: #c2410c; }
+        .pill-pending .pill-dot { background: #f97316; }
+        .pill-progress { background: #eff6ff; color: #1d4ed8; }
+        .pill-progress .pill-dot { background: #3b82f6; }
+        .pill-resolved { background: #f0fdf4; color: #15803d; }
+        .pill-resolved .pill-dot { background: #22c55e; }
+
+        /* ACTION FORM */
+        .action-form { display: flex; flex-direction: column; gap: 7px; min-width: 210px; }
+
+        .form-select-custom, .form-input-custom {
+            padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px;
+            font-family: 'DM Sans', sans-serif; font-size: 0.83rem; color: var(--ink);
+            background: var(--cream); outline: none; transition: border-color 0.2s; width: 100%;
+        }
+        .form-select-custom:focus, .form-input-custom:focus { border-color: var(--gold); background: var(--white); }
+        .form-input-custom::placeholder { color: var(--ink-muted); }
+
+        .btn-update {
+            background: var(--ink); color: var(--gold); border: none; border-radius: 8px; padding: 8px 14px;
+            font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 0.82rem; cursor: pointer;
+            transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .btn-update:hover { background: var(--ink-soft); }
+
+        .btn-view-details {
+            background: transparent; color: var(--ink-muted); border: 1px solid var(--border);
+            border-radius: 8px; padding: 7px 14px; font-family: 'DM Sans', sans-serif;
+            font-weight: 500; font-size: 0.82rem; cursor: pointer; text-decoration: none;
+            transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .btn-view-details:hover { border-color: var(--ink); color: var(--ink); }
+
+        /* EMPTY STATE */
+        .empty-state { text-align: center; padding: 64px 32px; }
+        .empty-icon { width: 64px; height: 64px; background: var(--cream); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; margin: 0 auto 18px; color: var(--ink-muted); }
+        .empty-title { font-weight: 700; font-size: 1rem; color: var(--ink); margin-bottom: 6px; }
+        .empty-sub { font-size: 0.85rem; color: var(--ink-muted); }
+
+        /* NO FILTER RESULTS */
+        .no-results-row { display: none; }
+        .no-results-cell { text-align: center; padding: 40px; color: var(--ink-muted); font-size: 0.88rem; }
+
+        /* ANIMATIONS */
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in   { animation: fadeUp 0.5s ease both; }
+        .fade-in-1 { animation: fadeUp 0.5s 0.1s ease both; }
+        .fade-in-2 { animation: fadeUp 0.5s 0.2s ease both; }
+
+        @media (max-width: 768px) {
+            .page { padding: 16px; }
+            .admin-banner { flex-direction: column; align-items: flex-start; gap: 16px; }
+            .navbar .container-fluid { padding: 0 16px; }
+            .banner-right { text-align: left; }
+            .filter-control { min-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">
+            <div class="brand-icon">⚖</div>
+            <span class="brand-name">ResolveIQ</span>
+        </a>
+        <div class="nav-right">
+            <div class="admin-chip">
+                <div class="admin-avatar">A</div>
+                <span class="admin-label">Admin</span>
+            </div>
+            <a href="/logout" class="btn-logout">
+                <i class="fa-solid fa-right-from-bracket"></i> Logout
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="page">
+
+    <!-- BANNER -->
+    <div class="admin-banner fade-in">
+        <div class="banner-text">
+            <div class="banner-eyebrow">Admin Panel</div>
+            <div class="banner-title">Complaint Dashboard</div>
+            <div class="banner-sub">Review, update, filter, and manage all submitted complaints.</div>
+        </div>
+        <div class="banner-right">
+            <div class="banner-date" id="date-display"></div>
+            <div class="banner-time" id="time-display"></div>
+        </div>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="row g-3 mb-2 fade-in-1">
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="stat-card">
+                <div class="stat-icon total"><i class="fa-solid fa-layer-group"></i></div>
+                <div><div class="stat-value">{{ total_count }}</div><div class="stat-label">Total</div></div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="stat-card">
+                <div class="stat-icon pending"><i class="fa-solid fa-hourglass-half"></i></div>
+                <div><div class="stat-value">{{ pending_count }}</div><div class="stat-label">Pending</div></div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="stat-card">
+                <div class="stat-icon progress"><i class="fa-solid fa-rotate"></i></div>
+                <div><div class="stat-value">{{ in_progress_count }}</div><div class="stat-label">In Progress</div></div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="stat-card">
+                <div class="stat-icon resolved"><i class="fa-solid fa-circle-check"></i></div>
+                <div><div class="stat-value">{{ resolved_count }}</div><div class="stat-label">Resolved</div></div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="stat-card">
+                <div class="stat-icon urgent"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                <div><div class="stat-value">{{ important_count }}</div><div class="stat-label">High / Urgent</div></div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="stat-card">
+                <div class="stat-icon today"><i class="fa-solid fa-calendar-day"></i></div>
+                <div><div class="stat-value">{{ today_count }}</div><div class="stat-label">Today</div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CATEGORY SUMMARY -->
+    <div class="summary-card fade-in-1">
+        <div class="summary-header">
+            <div>
+                <div class="summary-heading">Category Summary</div>
+                <div class="summary-subhead">Click a category to filter the table</div>
+            </div>
+        </div>
+        <div class="summary-body">
+            {% if category_summary %}
+                {% for item in category_summary %}
+                <div class="summary-pill" onclick="filterByCategory('{{ item['category'] }}')">
+                    <i class="fa-solid fa-tag" style="font-size:10px;color:var(--gold);"></i>
+                    {{ item['category'] if item['category'] else 'Other' }}
+                    <span class="summary-pill-count">{{ item['count'] }}</span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="summary-pill">No category data</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- COMPLAINTS TABLE -->
+    <div class="table-card fade-in-2">
+        <div class="table-header">
+            <div>
+                <div class="table-heading">All Complaints</div>
+                <div class="table-subhead">Search, filter, update status, and add admin remarks</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+                <span class="complaint-count" id="visible-count">{{ total_count }} total</span>
+                <button class="btn-export" onclick="exportCSV()">
+                    <i class="fa-solid fa-file-csv"></i> Export CSV
+                </button>
+            </div>
+        </div>
+
+        <!-- RESOLUTION METER -->
+        {% if total_count > 0 %}
+        {% set res_pct = ((resolved_count / total_count) * 100)|int %}
+        {% set pnd_pct = ((pending_count / total_count) * 100)|int %}
+        {% set prg_pct = ((in_progress_count / total_count) * 100)|int %}
+        <div class="resolution-wrap">
+            <div class="resolution-row">
+                <div class="resolution-item">
+                    <span class="resolution-label-text">Pending</span>
+                    <div class="resolution-bar-outer">
+                        <div class="resolution-bar-inner" style="width:{{ pnd_pct }}%;background:#f97316;"></div>
+                    </div>
+                    <span class="resolution-pct" style="color:#f97316;">{{ pnd_pct }}%</span>
+                </div>
+                <div class="resolution-item">
+                    <span class="resolution-label-text">In Progress</span>
+                    <div class="resolution-bar-outer">
+                        <div class="resolution-bar-inner" style="width:{{ prg_pct }}%;background:#3b82f6;"></div>
+                    </div>
+                    <span class="resolution-pct" style="color:#3b82f6;">{{ prg_pct }}%</span>
+                </div>
+                <div class="resolution-item">
+                    <span class="resolution-label-text">Resolved</span>
+                    <div class="resolution-bar-outer">
+                        <div class="resolution-bar-inner" style="width:{{ res_pct }}%;background:#22c55e;"></div>
+                    </div>
+                    <span class="resolution-pct" style="color:#22c55e;">{{ res_pct }}%</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- FILTERS -->
+        <div class="filters-bar">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-4">
+                    <input type="text" id="searchInput" class="form-control filter-control"
+                        placeholder="Search complaint, user, email, category...">
+                </div>
+                <div class="col-md-2">
+                    <select id="statusFilter" class="form-select filter-control">
+                        <option value="">All Status</option>
+                        <option value="Pending">Pending</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Resolved">Resolved</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select id="priorityFilter" class="form-select filter-control">
+                        <option value="">All Priority</option>
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                        <option value="Urgent">Urgent</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select id="categoryFilter" class="form-select filter-control">
+                        <option value="">All Category</option>
+                        {% if category_summary %}
+                            {% for item in category_summary %}
+                            <option value="{{ item['category'] }}">{{ item['category'] }}</option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex gap-2 align-items-center">
+                    <button class="btn-clear-filters" onclick="clearFilters()">
+                        <i class="fa-solid fa-xmark"></i> Clear
+                    </button>
+                    <span class="filter-visible-count" id="filter-count"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table id="complaintsTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>User</th>
+                        <th>Complaint</th>
+                        <th>Category</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Attachment</th>
+                        <th>Date</th>
+                        <th>Remark</th>
+                        <th>Update</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in complaints %}
+                    <tr data-status="{{ c['status'] }}" data-priority="{{ c['priority'] }}" data-category="{{ c['category'] }}">
+
+                        <td><span class="cmp-id">CMP-{{ "%03d"|format(c['id']) }}</span></td>
+
+                        <td>
+                            <div class="user-cell">
+                                <div class="user-mini-avatar">{{ (c['user_name'] or 'U')[0]|upper }}</div>
+                                <div>
+                                    <div class="user-mini-name">{{ c['user_name'] or 'Unknown' }}</div>
+                                    <div class="user-mini-email">{{ c['user_email'] or 'No email' }}</div>
+                                </div>
+                            </div>
+                        </td>
+
+                        <td>
+                            <div class="complaint-title">{{ c['subject'] }}</div>
+                            <div class="complaint-desc" title="{{ c['description'] }}">{{ c['description'] }}</div>
+                        </td>
+
+                        <td>{{ c['category'] or 'N/A' }}</td>
+
+                        <td>
+                            {% if c['priority'] == "Urgent" %}
+                                <span class="pill pill-urgent"><span class="pill-dot"></span>Urgent</span>
+                            {% elif c['priority'] == "High" %}
+                                <span class="pill pill-high"><span class="pill-dot"></span>High</span>
+                            {% elif c['priority'] == "Medium" %}
+                                <span class="pill pill-medium"><span class="pill-dot"></span>Medium</span>
+                            {% else %}
+                                <span class="pill pill-low"><span class="pill-dot"></span>Low</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if c['status'] == "Pending" %}
+                                <span class="pill pill-pending"><span class="pill-dot"></span>Pending</span>
+                            {% elif c['status'] == "In Progress" %}
+                                <span class="pill pill-progress"><span class="pill-dot"></span>In Progress</span>
+                            {% else %}
+                                <span class="pill pill-resolved"><span class="pill-dot"></span>Resolved</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if c['file_path'] and c['file_path'] != 'None' %}
+                                <a href="/{{ c['file_path'] }}" target="_blank" class="attachment-link">
+                                    <i class="fa-solid fa-paperclip"></i> View
+                                </a>
+                            {% else %}
+                                <span class="no-file">No file</span>
+                            {% endif %}
+                        </td>
+
+                        <td><div class="date-cell">{{ c['created_at'].split(' ')[0] if c['created_at'] else 'N/A' }}</div></td>
+
+                        <td>
+                            <span style="font-size:0.82rem;color:var(--ink-muted);max-width:120px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+                                  title="{{ c['admin_remark'] or '' }}">
+                                {{ c['admin_remark'] or '—' }}
+                            </span>
+                        </td>
+
+                        <td>
+                            <form method="POST" action="/update_complaint/{{ c['id'] }}">
+                                <div class="action-form">
+                                    <select name="status" class="form-select-custom">
+                                        <option value="Pending"     {% if c['status']=='Pending' %}selected{% endif %}>⏳ Pending</option>
+                                        <option value="In Progress" {% if c['status']=='In Progress' %}selected{% endif %}>🔄 In Progress</option>
+                                        <option value="Resolved"    {% if c['status']=='Resolved' %}selected{% endif %}>✅ Resolved</option>
+                                    </select>
+                                    <input type="text" name="remark" class="form-input-custom"
+                                        placeholder="Add admin remark..."
+                                        value="{{ c['admin_remark'] or '' }}">
+                                    <button type="submit" class="btn-update">
+                                        <i class="fa-solid fa-floppy-disk"></i> Update
+                                    </button>
+                                    <a href="/complaint/{{ c['id'] }}" class="btn-view-details">
+                                        <i class="fa-solid fa-eye"></i> View Details
+                                    </a>
+                                </div>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="10">
+                            <div class="empty-state">
+                                <div class="empty-icon"><i class="fa-regular fa-folder-open"></i></div>
+                                <div class="empty-title">No complaints yet</div>
+                                <div class="empty-sub">All submitted complaints will appear here.</div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tbody id="no-results-body" style="display:none;">
+                    <tr>
+                        <td colspan="10" class="no-results-cell">
+                            <i class="fa-solid fa-filter" style="margin-right:6px;opacity:0.4;"></i>
+                            No complaints match the current filters.
+                            <a href="#" onclick="clearFilters()" style="color:var(--gold);text-decoration:none;margin-left:6px;font-weight:600;">Clear filters</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // ── CLOCK ──
+    function updateClock() {
+        const now = new Date();
+        document.getElementById('time-display').textContent =
+            now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        document.getElementById('date-display').textContent =
+            now.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // ── FILTER ──
+    const searchInput    = document.getElementById("searchInput");
+    const statusFilter   = document.getElementById("statusFilter");
+    const priorityFilter = document.getElementById("priorityFilter");
+    const categoryFilter = document.getElementById("categoryFilter");
+    const tableRows      = document.querySelectorAll("#complaintsTable tbody:first-of-type tr");
+
+    function filterTable() {
+        const sv = searchInput.value.toLowerCase().trim();
+        const stv = statusFilter.value.toLowerCase().trim();
+        const pv  = priorityFilter.value.toLowerCase().trim();
+        const cv  = categoryFilter.value.toLowerCase().trim();
+        let visible = 0;
+
+        tableRows.forEach(row => {
+            const text     = row.innerText.toLowerCase();
+            const rowSt    = (row.dataset.status   || "").toLowerCase();
+            const rowPr    = (row.dataset.priority  || "").toLowerCase();
+            const rowCat   = (row.dataset.category  || "").toLowerCase();
+
+            const ok = (!sv  || text.includes(sv))
+                    && (!stv || rowSt  === stv)
+                    && (!pv  || rowPr  === pv)
+                    && (!cv  || rowCat === cv);
+
+            row.style.display = ok ? "" : "none";
+            if (ok) visible++;
+        });
+
+        document.getElementById('visible-count').textContent = visible + ' shown';
+        document.getElementById('filter-count').textContent  = visible + ' results';
+        document.getElementById('no-results-body').style.display =
+            (visible === 0 && tableRows.length > 0) ? '' : 'none';
+    }
+
+    searchInput.addEventListener("keyup", filterTable);
+    statusFilter.addEventListener("change", filterTable);
+    priorityFilter.addEventListener("change", filterTable);
+    categoryFilter.addEventListener("change", filterTable);
+
+    // ── CLEAR FILTERS ──
+    function clearFilters() {
+        searchInput.value    = '';
+        statusFilter.value   = '';
+        priorityFilter.value = '';
+        categoryFilter.value = '';
+        filterTable();
+    }
+
+    // ── FILTER BY CATEGORY (from summary pills) ──
+    function filterByCategory(cat) {
+        categoryFilter.value = cat;
+        filterTable();
+        document.getElementById('complaintsTable').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // ── EXPORT CSV ──
+    function exportCSV() {
+        const visibleRows = [...tableRows].filter(r => r.style.display !== 'none');
+        const headers = ['ID', 'User', 'Complaint', 'Category', 'Priority', 'Status', 'Date', 'Remark'];
+        const lines   = [headers.join(',')];
+
+        visibleRows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length < 9) return;
+            const id       = cells[0].textContent.trim();
+            const user     = cells[1].textContent.trim().replace(/\n/g, ' ').replace(/,/g, ' ');
+            const subject  = cells[2].textContent.trim().replace(/\n/g, ' ').replace(/,/g, ' ');
+            const category = cells[3].textContent.trim();
+            const priority = cells[4].textContent.trim();
+            const status   = cells[5].textContent.trim();
+            const date     = cells[7].textContent.trim();
+            const remark   = cells[8].textContent.trim().replace(/,/g, ' ');
+            lines.push([id, `"${user}"`, `"${subject}"`, category, priority, status, date, `"${remark}"`].join(','));
+        });
+
+        const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = 'complaints_export.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    // Run filter on page load
+    filterTable();
+</script>
+</body>
+</html>

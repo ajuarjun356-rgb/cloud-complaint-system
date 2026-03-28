@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Complaint Management Portal</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --ink:       #0b0f1a;
+            --ink-soft:  #3d4660;
+            --ink-muted: #8892a4;
+            --cream:     #f7f5f0;
+            --white:     #ffffff;
+            --gold:      #c9a84c;
+            --gold-lt:   #e8d5a3;
+            --blue:      #1a3c6e;
+            --blue-lt:   #dbeafe;
+            --border:    #e3e0d8;
+            --shadow:    0 4px 32px rgba(11,15,26,0.08);
+            --shadow-lg: 0 16px 56px rgba(11,15,26,0.13);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--cream);
+            color: var(--ink);
+            overflow-x: hidden;
+        }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            background: var(--ink);
+            padding: 0 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .navbar .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .brand-icon {
+            width: 34px; height: 34px;
+            background: linear-gradient(135deg, var(--gold), #8b6914);
+            border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px;
+        }
+
+        .brand-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 0.3px;
+        }
+
+        .nav-actions { display: flex; align-items: center; gap: 10px; }
+
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: rgba(255,255,255,0.85);
+            border-radius: 8px;
+            padding: 7px 18px;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 500;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+
+        .btn-gold {
+            background: var(--gold);
+            border: none;
+            color: var(--ink);
+            border-radius: 8px;
+            padding: 8px 20px;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .btn-gold:hover { background: var(--gold-lt); color: var(--ink); }
+
+        /* ── HERO ── */
+        .hero {
+            background: var(--ink);
+            min-height: 88vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Subtle grid background */
+        .hero::before {
+            content: '';
+            position: absolute; inset: 0;
+            background-image:
+                linear-gradient(rgba(201,168,76,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(201,168,76,0.04) 1px, transparent 1px);
+            background-size: 48px 48px;
+        }
+
+        /* Glow blob */
+        .hero::after {
+            content: '';
+            position: absolute;
+            top: -120px; right: -120px;
+            width: 520px; height: 520px;
+            background: radial-gradient(circle, rgba(201,168,76,0.12) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .hero .container { position: relative; z-index: 2; padding: 80px 0; }
+
+        .hero-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(201,168,76,0.12);
+            border: 1px solid rgba(201,168,76,0.25);
+            color: var(--gold);
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 28px;
+            animation: fadeUp 0.6s ease both;
+        }
+
+        .hero-title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2.6rem, 5vw, 4rem);
+            font-weight: 800;
+            color: #fff;
+            line-height: 1.15;
+            margin-bottom: 22px;
+            animation: fadeUp 0.6s 0.1s ease both;
+        }
+
+        .hero-title span {
+            color: var(--gold);
+        }
+
+        .hero-desc {
+            color: var(--ink-muted);
+            font-size: 1.05rem;
+            line-height: 1.75;
+            max-width: 520px;
+            margin-bottom: 38px;
+            animation: fadeUp 0.6s 0.2s ease both;
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            animation: fadeUp 0.6s 0.3s ease both;
+        }
+
+        .btn-hero-primary {
+            background: var(--gold);
+            color: var(--ink);
+            border: none;
+            border-radius: 10px;
+            padding: 13px 30px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            text-decoration: none;
+            display: inline-flex; align-items: center; gap: 8px;
+            transition: all 0.22s;
+            font-family: 'DM Sans', sans-serif;
+        }
+        .btn-hero-primary:hover { background: var(--gold-lt); color: var(--ink); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(201,168,76,0.3); }
+
+        .btn-hero-secondary {
+            background: transparent;
+            color: rgba(255,255,255,0.75);
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 10px;
+            padding: 13px 28px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            text-decoration: none;
+            display: inline-flex; align-items: center; gap: 8px;
+            transition: all 0.22s;
+            font-family: 'DM Sans', sans-serif;
+        }
+        .btn-hero-secondary:hover { border-color: var(--gold); color: var(--gold); }
+
+        /* Hero stats bar */
+        .hero-stats {
+            display: flex;
+            gap: 36px;
+            margin-top: 52px;
+            padding-top: 36px;
+            border-top: 1px solid rgba(255,255,255,0.07);
+            animation: fadeUp 0.6s 0.4s ease both;
+        }
+
+        .stat-item { }
+        .stat-value {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--gold);
+        }
+        .stat-label { font-size: 0.82rem; color: var(--ink-muted); margin-top: 2px; }
+
+        /* Hero card panel */
+        .hero-panel {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 32px;
+            backdrop-filter: blur(12px);
+            animation: fadeUp 0.7s 0.2s ease both;
+        }
+
+        .panel-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            color: #fff;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .check-item {
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        .check-item:last-child { margin-bottom: 0; }
+
+        .check-icon {
+            width: 28px; height: 28px;
+            background: rgba(201,168,76,0.15);
+            border: 1px solid rgba(201,168,76,0.3);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            color: var(--gold);
+            font-size: 12px;
+            margin-top: 1px;
+        }
+
+        .check-heading { font-size: 0.9rem; font-weight: 600; color: #fff; margin-bottom: 3px; }
+        .check-sub { font-size: 0.82rem; color: var(--ink-muted); line-height: 1.5; }
+
+        /* ── SECTIONS ── */
+        .section { padding: 90px 0; }
+        .section.alt { background: var(--white); }
+
+        .section-eyebrow {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--gold);
+            margin-bottom: 10px;
+        }
+
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.8rem, 3vw, 2.4rem);
+            font-weight: 700;
+            color: var(--ink);
+            margin-bottom: 12px;
+        }
+
+        .section-sub {
+            color: var(--ink-muted);
+            font-size: 1rem;
+            max-width: 580px;
+            line-height: 1.7;
+        }
+
+        /* ── FEATURE CARDS ── */
+        .feat-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
+            height: 100%;
+            transition: all 0.25s;
+            position: relative;
+            overflow: hidden;
+        }
+        .feat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--gold), var(--gold-lt));
+            opacity: 0;
+            transition: opacity 0.25s;
+        }
+        .feat-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+        .feat-card:hover::before { opacity: 1; }
+
+        .feat-icon {
+            width: 48px; height: 48px;
+            background: linear-gradient(135deg, rgba(201,168,76,0.15), rgba(201,168,76,0.05));
+            border: 1px solid rgba(201,168,76,0.2);
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+            color: var(--gold);
+            margin-bottom: 18px;
+        }
+
+        .feat-title { font-weight: 700; font-size: 1rem; color: var(--ink); margin-bottom: 8px; }
+        .feat-desc { font-size: 0.88rem; color: var(--ink-muted); line-height: 1.65; }
+
+        /* ── STEPS ── */
+        .step-wrap { position: relative; }
+        .step-line {
+            position: absolute;
+            top: 28px; left: calc(25% - 1px);
+            width: 50%; height: 1px;
+            background: linear-gradient(90deg, var(--gold), var(--gold-lt), var(--gold));
+            opacity: 0.3;
+        }
+
+        .step-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px 22px;
+            text-align: center;
+            position: relative;
+            transition: all 0.25s;
+        }
+        .step-card:hover { box-shadow: var(--shadow); transform: translateY(-3px); }
+
+        .step-num {
+            width: 48px; height: 48px;
+            background: var(--ink);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--gold);
+            margin: 0 auto 16px;
+            border: 2px solid rgba(201,168,76,0.3);
+        }
+
+        .step-title { font-weight: 700; font-size: 0.95rem; color: var(--ink); margin-bottom: 8px; }
+        .step-desc { font-size: 0.85rem; color: var(--ink-muted); line-height: 1.6; }
+
+        /* ── REVIEWS ── */
+        .review-card {
+            background: var(--ink);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 16px;
+            padding: 28px;
+            height: 100%;
+        }
+
+        .review-stars { color: var(--gold); font-size: 0.9rem; margin-bottom: 14px; letter-spacing: 2px; }
+        .review-text { color: rgba(255,255,255,0.7); font-size: 0.9rem; line-height: 1.7; margin-bottom: 20px; }
+        .review-author { display: flex; align-items: center; gap: 12px; }
+
+        .review-avatar {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--gold), #8b6914);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.85rem; color: var(--ink);
+        }
+
+        .review-name { font-weight: 600; font-size: 0.88rem; color: #fff; }
+        .review-role { font-size: 0.78rem; color: var(--ink-muted); }
+
+        /* ── ABOUT ── */
+        .about-card {
+            background: linear-gradient(135deg, var(--ink) 0%, #1a2035 100%);
+            border: 1px solid rgba(201,168,76,0.15);
+            border-radius: 20px;
+            padding: 48px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .about-card::after {
+            content: '⚖';
+            position: absolute;
+            bottom: -20px; right: 20px;
+            font-size: 120px;
+            opacity: 0.03;
+        }
+
+        .about-card p { color: rgba(255,255,255,0.65); line-height: 1.85; font-size: 1rem; max-width: 620px; margin: 0 auto; }
+
+        /* ── CONTACT ── */
+        .contact-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px 24px;
+            text-align: center;
+            transition: all 0.25s;
+        }
+        .contact-card:hover { box-shadow: var(--shadow); transform: translateY(-3px); }
+
+        .contact-icon {
+            width: 52px; height: 52px;
+            background: var(--ink);
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+            color: var(--gold);
+            margin: 0 auto 16px;
+        }
+
+        .contact-label { font-weight: 700; font-size: 0.95rem; color: var(--ink); margin-bottom: 6px; }
+        .contact-val { font-size: 0.88rem; color: var(--ink-muted); }
+
+        /* ── CTA BANNER ── */
+        .cta-banner {
+            background: linear-gradient(135deg, var(--ink), #1a2035);
+            border-radius: 20px;
+            padding: 56px 48px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .cta-banner::before {
+            content: '';
+            position: absolute; inset: 0;
+            background-image:
+                linear-gradient(rgba(201,168,76,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(201,168,76,0.04) 1px, transparent 1px);
+            background-size: 36px 36px;
+        }
+
+        .cta-banner h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem; font-weight: 700;
+            color: #fff; margin-bottom: 12px;
+            position: relative; z-index: 1;
+        }
+        .cta-banner p { color: var(--ink-muted); margin-bottom: 28px; position: relative; z-index: 1; }
+        .cta-banner .cta-btns { position: relative; z-index: 1; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+
+        /* ── FOOTER ── */
+        footer {
+            background: var(--ink);
+            padding: 56px 0 24px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .footer-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+        .footer-desc { color: var(--ink-muted); font-size: 0.88rem; line-height: 1.65; max-width: 260px; }
+
+        .footer-heading { font-weight: 700; font-size: 0.82rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); margin-bottom: 16px; }
+
+        .footer-link {
+            display: block;
+            color: var(--ink-muted);
+            text-decoration: none;
+            font-size: 0.88rem;
+            margin-bottom: 10px;
+            transition: color 0.2s;
+        }
+        .footer-link:hover { color: var(--gold-lt); }
+
+        .footer-contact-item { display: flex; align-items: center; gap: 10px; color: var(--ink-muted); font-size: 0.88rem; margin-bottom: 10px; }
+        .footer-contact-item i { color: var(--gold); width: 16px; }
+
+        .footer-divider { border-color: rgba(255,255,255,0.06); margin: 32px 0 20px; }
+
+        .footer-bottom { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .footer-copy { color: var(--ink-muted); font-size: 0.82rem; }
+        .footer-socials { display: flex; gap: 10px; }
+
+        .social-btn {
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--ink-muted);
+            text-decoration: none;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .social-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+        /* ── ANIMATIONS ── */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(22px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.55s ease, transform 0.55s ease;
+        }
+        .reveal.visible { opacity: 1; transform: none; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 768px) {
+            .hero-stats { gap: 24px; flex-wrap: wrap; }
+            .hero-panel { margin-top: 40px; }
+            .cta-banner { padding: 36px 24px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── NAVBAR ── -->
+<nav class="navbar">
+    <div class="container">
+        <a class="navbar-brand" href="/">
+            <div class="brand-icon">⚖</div>
+            <span class="brand-name">ResolveIQ</span>
+        </a>
+        <div class="nav-actions">
+            <a href="/login" class="btn-ghost">Login</a>
+            <a href="/register" class="btn-gold">Get Started</a>
+        </div>
+    </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="hero">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6">
+                <div class="hero-eyebrow">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    Professional · Secure · Reliable
+                </div>
+                <h1 class="hero-title">
+                    Smart <span>Complaint</span><br>Management Portal
+                </h1>
+                <p class="hero-desc">
+                    A modern platform to register, manage, track, and resolve complaints efficiently.
+                    Submit issues easily and let administrators handle them with full transparency.
+                </p>
+                <div class="hero-cta">
+                    <a href="/register" class="btn-hero-primary">
+                        <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                        Get Started Free
+                    </a>
+                    <a href="/login" class="btn-hero-secondary">
+                        <i class="fa-regular fa-circle-play"></i>
+                        Login to Portal
+                    </a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">3</div>
+                        <div class="stat-label">User Roles</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">100%</div>
+                        <div class="stat-label">Transparent</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">Live</div>
+                        <div class="stat-label">Status Updates</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">Free</div>
+                        <div class="stat-label">To Use</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="hero-panel">
+                    <div class="panel-title">Why choose this portal?</div>
+
+                    <div class="check-item">
+                        <div class="check-icon"><i class="fa-solid fa-check"></i></div>
+                        <div>
+                            <div class="check-heading">Easy complaint submission</div>
+                            <div class="check-sub">Register issues with category, priority, and file attachments in seconds.</div>
+                        </div>
+                    </div>
+
+                    <div class="check-item">
+                        <div class="check-icon"><i class="fa-solid fa-check"></i></div>
+                        <div>
+                            <div class="check-heading">Real-time status tracking</div>
+                            <div class="check-sub">Monitor complaint progress — pending, in-progress, or resolved.</div>
+                        </div>
+                    </div>
+
+                    <div class="check-item">
+                        <div class="check-icon"><i class="fa-solid fa-check"></i></div>
+                        <div>
+                            <div class="check-heading">Powerful admin dashboard</div>
+                            <div class="check-sub">Admins can review, update status, add remarks, and manage all complaints.</div>
+                        </div>
+                    </div>
+
+                    <div class="check-item">
+                        <div class="check-icon"><i class="fa-solid fa-check"></i></div>
+                        <div>
+                            <div class="check-heading">Email notifications</div>
+                            <div class="check-sub">Automatic emails sent to users and admins on every status change.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── FEATURES ── -->
+<section class="section reveal">
+    <div class="container">
+        <div class="text-center mb-5">
+            <span class="section-eyebrow">Features</span>
+            <h2 class="section-title">Everything you need</h2>
+            <p class="section-sub mx-auto">A complete set of tools to submit, track, and resolve complaints with full transparency.</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-3">
+                <div class="feat-card">
+                    <div class="feat-icon"><i class="fa-solid fa-file-circle-plus"></i></div>
+                    <div class="feat-title">Easy Submission</div>
+                    <p class="feat-desc">Register complaints with category, issue type, description, priority, and file attachments.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="feat-card">
+                    <div class="feat-icon"><i class="fa-solid fa-chart-line"></i></div>
+                    <div class="feat-title">Status Tracking</div>
+                    <p class="feat-desc">Track every complaint through a full activity log — from submission to resolution.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="feat-card">
+                    <div class="feat-icon"><i class="fa-solid fa-user-shield"></i></div>
+                    <div class="feat-title">Admin Control</div>
+                    <p class="feat-desc">Admins manage all complaints, update statuses, add remarks, and oversee the system.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="feat-card">
+                    <div class="feat-icon"><i class="fa-solid fa-bell"></i></div>
+                    <div class="feat-title">Email Alerts</div>
+                    <p class="feat-desc">Automated HTML emails notify users and admins instantly on every update.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── HOW IT WORKS ── -->
+<section class="section alt reveal">
+    <div class="container">
+        <div class="text-center mb-5">
+            <span class="section-eyebrow">Process</span>
+            <h2 class="section-title">How it works</h2>
+            <p class="section-sub mx-auto">Four simple steps from registration to resolution.</p>
+        </div>
+
+        <div class="row g-4 step-wrap">
+            <div class="col-md-3">
+                <div class="step-card">
+                    <div class="step-num">1</div>
+                    <div class="step-title">Register</div>
+                    <p class="step-desc">Create a free account to access the complaint portal securely.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="step-card">
+                    <div class="step-num">2</div>
+                    <div class="step-title">Submit</div>
+                    <p class="step-desc">Choose category, describe your issue, set priority, and attach files.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="step-card">
+                    <div class="step-num">3</div>
+                    <div class="step-title">Track</div>
+                    <p class="step-desc">Monitor complaint status live from your personal dashboard.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="step-card">
+                    <div class="step-num">4</div>
+                    <div class="step-title">Resolve</div>
+                    <p class="step-desc">Admins review, add remarks, and close issues efficiently.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── REVIEWS ── -->
+<section class="section reveal">
+    <div class="container">
+        <div class="text-center mb-5">
+            <span class="section-eyebrow">Testimonials</span>
+            <h2 class="section-title">What users say</h2>
+            <p class="section-sub mx-auto">Feedback from people who use the portal every day.</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="review-card">
+                    <div class="review-stars">★★★★★</div>
+                    <p class="review-text">"The portal is incredibly easy to use. Submitting complaints takes less than a minute and I always know what's happening."</p>
+                    <div class="review-author">
+                        <div class="review-avatar">S</div>
+                        <div>
+                            <div class="review-name">Student User</div>
+                            <div class="review-role">Regular Member</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="review-card">
+                    <div class="review-stars">★★★★★</div>
+                    <p class="review-text">"Tracking complaint status is very helpful. The activity log gives a clear picture of every update made by admin."</p>
+                    <div class="review-author">
+                        <div class="review-avatar">F</div>
+                        <div>
+                            <div class="review-name">Faculty Member</div>
+                            <div class="review-role">Verified User</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="review-card">
+                    <div class="review-stars">★★★★★</div>
+                    <p class="review-text">"The admin side is well organized. It makes handling multiple complaints at once much more manageable and efficient."</p>
+                    <div class="review-author">
+                        <div class="review-avatar">A</div>
+                        <div>
+                            <div class="review-name">Admin User</div>
+                            <div class="review-role">Administrator</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── ABOUT ── -->
+<section class="section alt reveal">
+    <div class="container">
+        <div class="text-center mb-5">
+            <span class="section-eyebrow">About</span>
+            <h2 class="section-title">About the Portal</h2>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-9">
+                <div class="about-card">
+                    <p>
+                        Smart Complaint Management Portal is designed to simplify the way complaints are submitted,
+                        tracked, and resolved. It provides a reliable platform for users to report issues and for
+                        administrators to manage them efficiently through a structured, transparent dashboard system.
+                        Built for institutions, colleges, and organisations that need accountability and clarity.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── CONTACT ── -->
+<section class="section reveal">
+    <div class="container">
+        <div class="text-center mb-5">
+            <span class="section-eyebrow">Contact</span>
+            <h2 class="section-title">Get in touch</h2>
+            <p class="section-sub mx-auto">Have questions? Reach out to the support team anytime.</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="contact-card">
+                    <div class="contact-icon"><i class="fa-solid fa-envelope"></i></div>
+                    <div class="contact-label">Email</div>
+                    <div class="contact-val">support@smartcomplaints.com</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="contact-card">
+                    <div class="contact-icon"><i class="fa-solid fa-phone"></i></div>
+                    <div class="contact-label">Phone</div>
+                    <div class="contact-val">+91 98765 43210</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="contact-card">
+                    <div class="contact-icon"><i class="fa-solid fa-location-dot"></i></div>
+                    <div class="contact-label">Address</div>
+                    <div class="contact-val">Kochi, Kerala, India</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── CTA BANNER ── -->
+<section class="section reveal">
+    <div class="container">
+        <div class="cta-banner">
+            <h2>Ready to get started?</h2>
+            <p>Register for free and submit your first complaint in under two minutes.</p>
+            <div class="cta-btns">
+                <a href="/register" class="btn-hero-primary"><i class="fa-solid fa-user-plus"></i> Create Account</a>
+                <a href="/login" class="btn-hero-secondary"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+    <div class="container">
+        <div class="row g-5">
+            <div class="col-lg-4">
+                <div class="footer-brand">
+                    <div class="brand-icon">⚖</div>
+                    <span class="brand-name">ResolveIQ</span>
+                </div>
+                <p class="footer-desc">A professional complaint handling system for users and administrators. Transparent, fast, and reliable.</p>
+            </div>
+
+            <div class="col-lg-2 col-md-4">
+                <div class="footer-heading">Navigation</div>
+                <a href="/" class="footer-link">Home</a>
+                <a href="/login" class="footer-link">Login</a>
+                <a href="/register" class="footer-link">Register</a>
+                <a href="/dashboard" class="footer-link">Dashboard</a>
+            </div>
+
+            <div class="col-lg-3 col-md-4">
+                <div class="footer-heading">Portal</div>
+                <a href="/add_complaint" class="footer-link">Submit Complaint</a>
+                <a href="/dashboard" class="footer-link">Track Status</a>
+                <a href="/admin" class="footer-link">Admin Panel</a>
+            </div>
+
+            <div class="col-lg-3 col-md-4">
+                <div class="footer-heading">Contact</div>
+                <div class="footer-contact-item"><i class="fa-solid fa-envelope"></i> support@smartcomplaints.com</div>
+                <div class="footer-contact-item"><i class="fa-solid fa-phone"></i> +91 98765 43210</div>
+                <div class="footer-contact-item"><i class="fa-solid fa-location-dot"></i> Kochi, Kerala, India</div>
+            </div>
+        </div>
+
+        <hr class="footer-divider">
+
+        <div class="footer-bottom">
+            <div class="footer-copy">© 2026 Smart Complaint Management Portal. All rights reserved.</div>
+            <div class="footer-socials">
+                <a href="#" class="social-btn"><i class="fa-brands fa-github"></i></a>
+                <a href="#" class="social-btn"><i class="fa-brands fa-linkedin"></i></a>
+                <a href="#" class="social-btn"><i class="fa-solid fa-envelope"></i></a>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Scroll reveal
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry, i) => {
+            if (entry.isIntersecting) {
+                setTimeout(() => entry.target.classList.add('visible'), i * 80);
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.1 });
+    reveals.forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

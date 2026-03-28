@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Dashboard — ResolveIQ</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --ink:       #0b0f1a;
+            --ink-soft:  #3d4660;
+            --ink-muted: #8892a4;
+            --cream:     #f7f5f0;
+            --white:     #ffffff;
+            --gold:      #c9a84c;
+            --gold-lt:   #e8d5a3;
+            --border:    #e3e0d8;
+            --shadow:    0 4px 24px rgba(11,15,26,0.07);
+            --shadow-lg: 0 16px 48px rgba(11,15,26,0.12);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--cream);
+            color: var(--ink);
+            min-height: 100vh;
+        }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            background: var(--ink);
+            padding: 0;
+            position: sticky; top: 0; z-index: 100;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .navbar .container-fluid {
+            display: flex; align-items: center;
+            justify-content: space-between;
+            height: 62px; padding: 0 32px;
+        }
+
+        .navbar-brand {
+            display: flex; align-items: center; gap: 10px;
+            text-decoration: none;
+        }
+
+        .brand-icon {
+            width: 32px; height: 32px;
+            background: linear-gradient(135deg, var(--gold), #8b6914);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px;
+        }
+
+        .brand-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem; font-weight: 700; color: #fff;
+        }
+
+        .nav-right { display: flex; align-items: center; gap: 16px; }
+
+        .user-chip {
+            display: flex; align-items: center; gap: 9px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 999px; padding: 5px 14px 5px 6px;
+        }
+
+        .user-avatar {
+            width: 28px; height: 28px;
+            background: linear-gradient(135deg, var(--gold), #8b6914);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; color: var(--ink);
+        }
+
+        .user-label { font-size: 0.85rem; color: rgba(255,255,255,0.8); font-weight: 500; }
+
+        .btn-logout {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.7);
+            border-radius: 8px; padding: 6px 16px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem; font-weight: 500;
+            text-decoration: none; transition: all 0.2s;
+            display: flex; align-items: center; gap: 7px;
+        }
+        .btn-logout:hover { border-color: #e63946; color: #e63946; }
+
+        /* ── PAGE ── */
+        .page { padding: 32px; max-width: 1280px; margin: 0 auto; }
+
+        /* ── WELCOME BANNER ── */
+        .welcome-banner {
+            background: var(--ink);
+            border-radius: 18px; padding: 28px 32px;
+            display: flex; align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            position: relative; overflow: hidden;
+        }
+
+        .welcome-banner::before {
+            content: '';
+            position: absolute; inset: 0;
+            background-image:
+                linear-gradient(rgba(201,168,76,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(201,168,76,0.05) 1px, transparent 1px);
+            background-size: 36px 36px;
+        }
+
+        .welcome-banner::after {
+            content: '⚖';
+            position: absolute; right: 120px; top: -10px;
+            font-size: 110px; opacity: 0.03; pointer-events: none;
+        }
+
+        .welcome-text { position: relative; z-index: 1; }
+
+        .welcome-greeting {
+            font-size: 0.75rem; font-weight: 600;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: var(--gold); margin-bottom: 6px;
+        }
+
+        .welcome-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.7rem; font-weight: 700;
+            color: #fff; margin-bottom: 4px;
+        }
+
+        .welcome-sub { font-size: 0.88rem; color: var(--ink-muted); margin-bottom: 14px; }
+
+        /* ── RESOLUTION PROGRESS ── */
+        .resolution-bar-wrap { max-width: 320px; }
+
+        .resolution-label {
+            display: flex; justify-content: space-between;
+            font-size: 0.75rem; margin-bottom: 5px;
+        }
+
+        .resolution-label span:first-child { color: rgba(255,255,255,0.5); }
+        .resolution-label span:last-child  { color: var(--gold); font-weight: 700; }
+
+        .resolution-track {
+            height: 5px; background: rgba(255,255,255,0.1);
+            border-radius: 999px; overflow: hidden;
+        }
+
+        .resolution-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--gold), var(--gold-lt));
+            border-radius: 999px;
+            transition: width 1s ease;
+        }
+
+        .banner-right { position: relative; z-index: 1; }
+
+        .btn-new-complaint {
+            background: var(--gold); color: var(--ink);
+            border: none; border-radius: 10px; padding: 12px 24px;
+            font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 0.9rem;
+            text-decoration: none; display: flex; align-items: center; gap: 8px;
+            transition: all 0.22s; white-space: nowrap;
+        }
+        .btn-new-complaint:hover { background: var(--gold-lt); color: var(--ink); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(201,168,76,0.3); }
+
+        /* ── STAT CARDS ── */
+        .stat-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 14px; padding: 20px 22px;
+            display: flex; align-items: center; gap: 16px;
+            transition: all 0.22s;
+        }
+        .stat-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+
+        .stat-icon {
+            width: 44px; height: 44px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; flex-shrink: 0;
+        }
+
+        .stat-icon.total    { background: rgba(11,15,26,0.07); color: var(--ink); }
+        .stat-icon.pending  { background: #fff7e6; color: #b45309; }
+        .stat-icon.progress { background: #eff6ff; color: #1d4ed8; }
+        .stat-icon.resolved { background: #f0fdf4; color: #15803d; }
+
+        .stat-value {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.7rem; font-weight: 700; color: var(--ink); line-height: 1;
+        }
+        .stat-label { font-size: 0.8rem; color: var(--ink-muted); margin-top: 3px; }
+
+        /* ── FILTER + SEARCH BAR ── */
+        .toolbar {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 14px; padding: 16px 20px;
+            display: flex; align-items: center;
+            justify-content: space-between;
+            gap: 16px; margin-bottom: 20px; flex-wrap: wrap;
+        }
+
+        .filter-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+
+        .filter-tab {
+            padding: 6px 16px; border-radius: 999px;
+            font-size: 0.82rem; font-weight: 600;
+            border: 1px solid var(--border);
+            background: var(--cream); color: var(--ink-muted);
+            cursor: pointer; transition: all 0.2s;
+            display: flex; align-items: center; gap: 6px;
+        }
+
+        .filter-tab:hover { border-color: var(--gold); color: var(--ink); }
+
+        .filter-tab.active {
+            background: var(--ink); color: var(--gold);
+            border-color: var(--ink);
+        }
+
+        .filter-tab .tab-count {
+            background: rgba(255,255,255,0.15);
+            border-radius: 999px; padding: 1px 7px;
+            font-size: 0.72rem;
+        }
+
+        .filter-tab:not(.active) .tab-count {
+            background: rgba(11,15,26,0.08);
+        }
+
+        .search-right { display: flex; align-items: center; gap: 10px; }
+
+        .search-input-wrap { position: relative; }
+
+        .search-icon {
+            position: absolute; left: 12px; top: 50%;
+            transform: translateY(-50%);
+            color: var(--ink-muted); font-size: 13px;
+        }
+
+        .search-input {
+            padding: 8px 14px 8px 34px;
+            border: 1px solid var(--border); border-radius: 9px;
+            font-family: 'DM Sans', sans-serif; font-size: 0.85rem;
+            color: var(--ink); background: var(--cream);
+            outline: none; transition: border-color 0.2s; width: 240px;
+        }
+        .search-input:focus { border-color: var(--gold); background: var(--white); }
+
+        .btn-search {
+            background: var(--ink); color: var(--gold);
+            border: none; border-radius: 9px; padding: 8px 18px;
+            font-family: 'DM Sans', sans-serif; font-weight: 600;
+            font-size: 0.82rem; cursor: pointer; transition: all 0.2s; white-space: nowrap;
+        }
+        .btn-search:hover { background: var(--ink-soft); }
+
+        .result-count { font-size: 0.8rem; color: var(--ink-muted); white-space: nowrap; }
+
+        /* ── TABLE CARD ── */
+        .table-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 16px; overflow: hidden;
+        }
+
+        .table-header {
+            padding: 18px 22px;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .table-heading {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.05rem; font-weight: 700; color: var(--ink);
+        }
+
+        .table-subhead { font-size: 0.8rem; color: var(--ink-muted); margin-top: 2px; }
+
+        .visible-count {
+            background: var(--cream); border: 1px solid var(--border);
+            border-radius: 999px; padding: 3px 12px;
+            font-size: 0.78rem; color: var(--ink-muted); font-weight: 600;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        thead tr { background: #fafaf8; }
+
+        thead th {
+            padding: 11px 16px; font-size: 0.72rem; font-weight: 700;
+            letter-spacing: 1.2px; text-transform: uppercase;
+            color: var(--ink-muted); border-bottom: 1px solid var(--border);
+            white-space: nowrap; cursor: pointer; user-select: none;
+        }
+
+        thead th:hover { color: var(--ink); }
+        thead th .sort-icon { margin-left: 4px; opacity: 0.4; font-size: 10px; }
+
+        tbody tr { border-bottom: 1px solid #f0ede8; transition: background 0.15s; }
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: #faf9f7; }
+
+        tbody td { padding: 13px 16px; font-size: 0.88rem; color: var(--ink); vertical-align: middle; }
+
+        .cmp-id {
+            font-weight: 700; font-size: 0.8rem;
+            color: var(--gold); letter-spacing: 0.5px;
+        }
+
+        .complaint-title { font-weight: 500; color: var(--ink); }
+        .complaint-cat { font-size: 0.78rem; color: var(--ink-muted); margin-top: 2px; }
+
+        .date-cell { font-size: 0.78rem; color: var(--ink-muted); white-space: nowrap; }
+
+        /* ── PILLS ── */
+        .pill {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 4px 11px; border-radius: 999px;
+            font-size: 0.75rem; font-weight: 600; white-space: nowrap;
+        }
+        .pill-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+        .pill-low      { background: #f0fdf4; color: #15803d; }
+        .pill-low .pill-dot { background: #15803d; }
+        .pill-medium   { background: #fffbeb; color: #b45309; }
+        .pill-medium .pill-dot { background: #f59e0b; }
+        .pill-high     { background: #fff1f2; color: #be123c; }
+        .pill-high .pill-dot { background: #e11d48; }
+        .pill-urgent   { background: var(--ink); color: var(--gold); }
+        .pill-urgent .pill-dot { background: var(--gold); }
+        .pill-pending  { background: #fff7ed; color: #c2410c; }
+        .pill-pending .pill-dot { background: #f97316; }
+        .pill-progress { background: #eff6ff; color: #1d4ed8; }
+        .pill-progress .pill-dot { background: #3b82f6; }
+        .pill-resolved { background: #f0fdf4; color: #15803d; }
+        .pill-resolved .pill-dot { background: #22c55e; }
+
+        .remark-text {
+            font-size: 0.82rem; color: var(--ink-muted);
+            max-width: 140px; overflow: hidden;
+            text-overflow: ellipsis; white-space: nowrap; display: block;
+        }
+
+        /* ── ACTION BUTTONS ── */
+        .action-btns { display: flex; gap: 7px; }
+
+        .btn-view {
+            width: 32px; height: 32px; border-radius: 8px;
+            border: 1px solid var(--border); background: var(--white); color: var(--ink);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; text-decoration: none; transition: all 0.2s;
+        }
+        .btn-view:hover { background: var(--ink); color: var(--gold); border-color: var(--ink); }
+
+        .btn-del {
+            width: 32px; height: 32px; border-radius: 8px;
+            border: 1px solid #fecaca; background: #fff1f2; color: #be123c;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; text-decoration: none; transition: all 0.2s;
+        }
+        .btn-del:hover { background: #e11d48; color: white; border-color: #e11d48; }
+
+        /* ── EMPTY STATE ── */
+        .empty-state { text-align: center; padding: 56px 32px; }
+        .empty-icon {
+            width: 60px; height: 60px; background: var(--cream);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 24px; margin: 0 auto 16px; color: var(--ink-muted);
+        }
+        .empty-title { font-weight: 700; font-size: 1rem; color: var(--ink); margin-bottom: 6px; }
+        .empty-sub { font-size: 0.85rem; color: var(--ink-muted); margin-bottom: 20px; }
+
+        .btn-empty {
+            background: var(--ink); color: var(--gold); border: none; border-radius: 9px;
+            padding: 10px 22px; font-family: 'DM Sans', sans-serif;
+            font-weight: 600; font-size: 0.88rem; text-decoration: none;
+            display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;
+        }
+        .btn-empty:hover { background: var(--ink-soft); color: var(--gold-lt); }
+
+        /* ── NO FILTER RESULTS ── */
+        .no-filter-row { display: none; }
+        .no-filter-cell { text-align: center; padding: 40px; color: var(--ink-muted); font-size: 0.88rem; }
+
+        /* ── ANIMATIONS ── */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in   { animation: fadeUp 0.5s ease both; }
+        .fade-in-1 { animation: fadeUp 0.5s 0.1s ease both; }
+        .fade-in-2 { animation: fadeUp 0.5s 0.2s ease both; }
+        .fade-in-3 { animation: fadeUp 0.5s 0.3s ease both; }
+
+        @media (max-width: 768px) {
+            .page { padding: 16px; }
+            .welcome-banner { flex-direction: column; align-items: flex-start; gap: 16px; }
+            .navbar .container-fluid { padding: 0 16px; }
+            .toolbar { flex-direction: column; align-items: flex-start; }
+            .search-input { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">
+            <div class="brand-icon">⚖</div>
+            <span class="brand-name">ResolveIQ</span>
+        </a>
+        <div class="nav-right">
+            <div class="user-chip">
+                <div class="user-avatar">{{ name[0]|upper }}</div>
+                <span class="user-label">{{ name }}</span>
+            </div>
+            <a href="/logout" class="btn-logout">
+                <i class="fa-solid fa-right-from-bracket"></i> Logout
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="page">
+
+    <!-- WELCOME BANNER -->
+    <div class="welcome-banner fade-in">
+        <div class="welcome-text">
+            <div class="welcome-greeting">Dashboard</div>
+            <div class="welcome-name">Welcome back, {{ name }} 👋</div>
+            <div class="welcome-sub">Here's an overview of all your submitted complaints.</div>
+
+            {% set total = complaints|length %}
+            {% set resolved = complaints|selectattr(6,"equalto","Resolved")|list|length %}
+            {% set pct = ((resolved / total) * 100)|int if total > 0 else 0 %}
+
+            <div class="resolution-bar-wrap">
+                <div class="resolution-label">
+                    <span>Resolution Rate</span>
+                    <span>{{ resolved }}/{{ total }} resolved ({{ pct }}%)</span>
+                </div>
+                <div class="resolution-track">
+                    <div class="resolution-fill" style="width: {{ pct }}%;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="banner-right">
+            <a href="/add_complaint" class="btn-new-complaint">
+                <i class="fa-solid fa-plus"></i> New Complaint
+            </a>
+        </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="row g-3 mb-4 fade-in-1">
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon total"><i class="fa-solid fa-layer-group"></i></div>
+                <div>
+                    <div class="stat-value">{{ complaints|length }}</div>
+                    <div class="stat-label">Total Complaints</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon pending"><i class="fa-solid fa-hourglass-half"></i></div>
+                <div>
+                    <div class="stat-value">{{ complaints|selectattr(6,"equalto","Pending")|list|length }}</div>
+                    <div class="stat-label">Pending</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon progress"><i class="fa-solid fa-rotate"></i></div>
+                <div>
+                    <div class="stat-value">{{ complaints|selectattr(6,"equalto","In Progress")|list|length }}</div>
+                    <div class="stat-label">In Progress</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon resolved"><i class="fa-solid fa-circle-check"></i></div>
+                <div>
+                    <div class="stat-value">{{ complaints|selectattr(6,"equalto","Resolved")|list|length }}</div>
+                    <div class="stat-label">Resolved</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOOLBAR: Filter Tabs + Search -->
+    <form method="GET" action="/dashboard">
+        <div class="toolbar fade-in-2">
+            <!-- Filter Tabs -->
+            <div class="filter-tabs">
+                <div class="filter-tab active" data-filter="all" onclick="setTab(this,'all')">
+                    All <span class="tab-count" id="cnt-all">{{ complaints|length }}</span>
+                </div>
+                <div class="filter-tab" data-filter="Pending" onclick="setTab(this,'Pending')">
+                    Pending <span class="tab-count" id="cnt-pending">{{ complaints|selectattr(6,"equalto","Pending")|list|length }}</span>
+                </div>
+                <div class="filter-tab" data-filter="In Progress" onclick="setTab(this,'In Progress')">
+                    In Progress <span class="tab-count" id="cnt-progress">{{ complaints|selectattr(6,"equalto","In Progress")|list|length }}</span>
+                </div>
+                <div class="filter-tab" data-filter="Resolved" onclick="setTab(this,'Resolved')">
+                    Resolved <span class="tab-count" id="cnt-resolved">{{ complaints|selectattr(6,"equalto","Resolved")|list|length }}</span>
+                </div>
+            </div>
+
+            <!-- Search -->
+            <div class="search-right">
+                <div class="search-input-wrap">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" name="search" id="searchInput"
+                        class="search-input"
+                        placeholder="Search complaints..."
+                        value="{{ search }}">
+                </div>
+                <button type="submit" class="btn-search">Search</button>
+                {% if search %}
+                <a href="/dashboard" style="font-size:0.82rem; color:var(--ink-muted); text-decoration:none; white-space:nowrap;">✕ Clear</a>
+                {% endif %}
+                <span class="result-count" id="visible-count-text"></span>
+            </div>
+        </div>
+    </form>
+
+    <!-- TABLE -->
+    <div class="table-card fade-in-3">
+        <div class="table-header">
+            <div>
+                <div class="table-heading">My Complaints</div>
+                <div class="table-subhead">Click the eye icon to view full details and activity log</div>
+            </div>
+            <span class="visible-count" id="visible-count">{{ complaints|length }} shown</span>
+        </div>
+
+        <table id="complaintsTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Complaint</th>
+                    <th>Date <span class="sort-icon">↕</span></th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Admin Remark</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in complaints %}
+                <tr data-status="{{ c[6] }}">
+                    <td><span class="cmp-id">CMP-{{ "%03d"|format(c[0]) }}</span></td>
+
+                    <td>
+                        <div class="complaint-title">{{ c[2] }}</div>
+                        <div class="complaint-cat">{{ c[4] }}</div>
+                    </td>
+
+                    <td>
+                        <div class="date-cell">
+                            {{ c[7].split(' ')[0] if c[7] else '—' }}
+                        </div>
+                    </td>
+
+                    <td>
+                        {% if c[5] == "Low" %}
+                            <span class="pill pill-low"><span class="pill-dot"></span>Low</span>
+                        {% elif c[5] == "Medium" %}
+                            <span class="pill pill-medium"><span class="pill-dot"></span>Medium</span>
+                        {% elif c[5] == "High" %}
+                            <span class="pill pill-high"><span class="pill-dot"></span>High</span>
+                        {% else %}
+                            <span class="pill pill-urgent"><span class="pill-dot"></span>Urgent</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if c[6] == "Pending" %}
+                            <span class="pill pill-pending"><span class="pill-dot"></span>Pending</span>
+                        {% elif c[6] == "In Progress" %}
+                            <span class="pill pill-progress"><span class="pill-dot"></span>In Progress</span>
+                        {% else %}
+                            <span class="pill pill-resolved"><span class="pill-dot"></span>Resolved</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        <span class="remark-text" title="{{ c[9] if c[9] else 'No remark' }}">
+                            {{ c[9] if c[9] else "—" }}
+                        </span>
+                    </td>
+
+                    <td>
+                        <div class="action-btns">
+                            <a href="/complaint/{{ c[0] }}" class="btn-view" title="View Details">
+                                <i class="fa-solid fa-eye"></i>
+                            </a>
+                            <a href="/delete_complaint/{{ c[0] }}" class="btn-del" title="Delete"
+                               onclick="return confirm('Are you sure you want to delete this complaint?')">
+                                <i class="fa-solid fa-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <div class="empty-icon"><i class="fa-regular fa-folder-open"></i></div>
+                            <div class="empty-title">No complaints found</div>
+                            <div class="empty-sub">
+                                {% if search %}No results for "{{ search }}". Try a different search term.
+                                {% else %}You haven't submitted any complaints yet.{% endif %}
+                            </div>
+                            {% if not search %}
+                            <a href="/add_complaint" class="btn-empty">
+                                <i class="fa-solid fa-plus"></i> Submit First Complaint
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <!-- No filter results row -->
+            <tbody id="no-filter-body" style="display:none;">
+                <tr>
+                    <td colspan="7" class="no-filter-cell">
+                        <i class="fa-solid fa-filter" style="margin-right:6px;opacity:0.4;"></i>
+                        No complaints match this filter.
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let activeFilter = 'all';
+
+    function setTab(el, filter) {
+        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        activeFilter = filter;
+        applyFilter();
+    }
+
+    function applyFilter() {
+        const rows = document.querySelectorAll('#complaintsTable tbody:first-of-type tr');
+        const searchVal = document.getElementById('searchInput').value.toLowerCase();
+        let visible = 0;
+
+        rows.forEach(row => {
+            const status = (row.dataset.status || '').trim();
+            const text   = row.innerText.toLowerCase();
+            const matchFilter = activeFilter === 'all' || status === activeFilter;
+            const matchSearch = !searchVal || text.includes(searchVal);
+            const show = matchFilter && matchSearch;
+            row.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+
+        document.getElementById('visible-count').textContent = visible + ' shown';
+        document.getElementById('no-filter-body').style.display = visible === 0 && rows.length > 0 ? '' : 'none';
+    }
+
+    // Live search
+    document.getElementById('searchInput').addEventListener('input', applyFilter);
+
+    // Run on load to handle server-side search
+    applyFilter();
+</script>
+</body>
+</html>

@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Complaint — ResolveIQ</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --ink:       #0b0f1a;
+            --ink-soft:  #3d4660;
+            --ink-muted: #8892a4;
+            --cream:     #f7f5f0;
+            --white:     #ffffff;
+            --gold:      #c9a84c;
+            --gold-lt:   #e8d5a3;
+            --border:    #e3e0d8;
+            --shadow:    0 4px 24px rgba(11,15,26,0.07);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--cream);
+            color: var(--ink);
+            min-height: 100vh;
+        }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            background: var(--ink);
+            padding: 0;
+            position: sticky; top: 0; z-index: 100;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .navbar .container-fluid {
+            display: flex; align-items: center;
+            justify-content: space-between;
+            height: 62px; padding: 0 32px;
+        }
+
+        .navbar-brand {
+            display: flex; align-items: center; gap: 10px;
+            text-decoration: none;
+        }
+
+        .brand-icon {
+            width: 32px; height: 32px;
+            background: linear-gradient(135deg, var(--gold), #8b6914);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px;
+        }
+
+        .brand-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem; font-weight: 700; color: #fff;
+        }
+
+        .btn-back-nav {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.7);
+            border-radius: 8px; padding: 6px 16px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem; font-weight: 500;
+            text-decoration: none; transition: all 0.2s;
+            display: flex; align-items: center; gap: 7px;
+        }
+        .btn-back-nav:hover { border-color: var(--gold); color: var(--gold); }
+
+        /* ── PAGE ── */
+        .page { padding: 32px; max-width: 1100px; margin: 0 auto; }
+
+        /* ── BANNER ── */
+        .complaint-banner {
+            background: var(--ink);
+            border-radius: 18px; padding: 28px 32px;
+            margin-bottom: 24px;
+            position: relative; overflow: hidden;
+        }
+
+        .complaint-banner::before {
+            content: '';
+            position: absolute; inset: 0;
+            background-image:
+                linear-gradient(rgba(201,168,76,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(201,168,76,0.05) 1px, transparent 1px);
+            background-size: 36px 36px;
+        }
+
+        .complaint-banner::after {
+            content: '📝';
+            position: absolute; right: 32px; top: -8px;
+            font-size: 100px; opacity: 0.04; pointer-events: none;
+        }
+
+        .banner-inner { position: relative; z-index: 1; }
+
+        .banner-eyebrow {
+            font-size: 0.72rem; font-weight: 700;
+            letter-spacing: 2px; text-transform: uppercase;
+            color: var(--gold); margin-bottom: 8px;
+        }
+
+        .banner-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.6rem; font-weight: 700;
+            color: #fff; margin-bottom: 4px;
+        }
+
+        .banner-sub { font-size: 0.88rem; color: var(--ink-muted); }
+
+        /* ── FORM CARD ── */
+        .form-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 16px; overflow: hidden;
+        }
+
+        .form-card-header {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        .form-card-icon {
+            width: 34px; height: 34px;
+            background: var(--ink); border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; color: var(--gold); flex-shrink: 0;
+        }
+
+        .form-card-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1rem; font-weight: 700; color: var(--ink);
+        }
+
+        .form-card-body { padding: 24px; }
+
+        /* ── FORM FIELDS ── */
+        .form-row { margin-bottom: 20px; }
+
+        .form-lbl {
+            display: block;
+            font-size: 0.82rem; font-weight: 600;
+            color: var(--ink); margin-bottom: 7px;
+            letter-spacing: 0.3px;
+        }
+
+        .form-lbl .req { color: #e63946; margin-left: 2px; }
+
+        .form-inp,
+        .form-sel,
+        .form-ta {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.9rem; color: var(--ink);
+            background: var(--cream);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+        }
+
+        .form-inp:focus,
+        .form-sel:focus,
+        .form-ta:focus {
+            border-color: var(--gold);
+            background: var(--white);
+            box-shadow: 0 0 0 3px rgba(201,168,76,0.12);
+        }
+
+        .form-inp::placeholder,
+        .form-ta::placeholder { color: var(--ink-muted); }
+
+        .form-ta { resize: vertical; min-height: 110px; }
+
+        /* ── PRIORITY CARDS ── */
+        .priority-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .priority-option { display: none; }
+
+        .priority-label {
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 6px;
+            padding: 14px 10px;
+            border: 1.5px solid var(--border);
+            border-radius: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--cream);
+            text-align: center;
+        }
+
+        .priority-label:hover { border-color: var(--gold); background: var(--white); }
+
+        .priority-option:checked + .priority-label {
+            border-color: var(--gold);
+            background: rgba(201,168,76,0.1);
+        }
+
+        .priority-icon { font-size: 18px; }
+        .priority-name { font-size: 0.8rem; font-weight: 700; color: var(--ink); }
+        .priority-desc { font-size: 0.7rem; color: var(--ink-muted); }
+
+        /* ── FILE UPLOAD ── */
+        .file-drop {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 28px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--cream);
+            position: relative;
+        }
+
+        .file-drop:hover { border-color: var(--gold); background: var(--white); }
+        .file-drop.has-file { border-color: var(--gold); background: rgba(201,168,76,0.06); }
+
+        .file-drop input[type="file"] {
+            position: absolute; inset: 0;
+            opacity: 0; cursor: pointer; width: 100%; height: 100%;
+        }
+
+        .file-drop-icon {
+            width: 44px; height: 44px;
+            background: var(--ink); border-radius: 11px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; color: var(--gold);
+            margin: 0 auto 12px;
+        }
+
+        .file-drop-title { font-weight: 600; font-size: 0.9rem; color: var(--ink); margin-bottom: 4px; }
+        .file-drop-sub { font-size: 0.78rem; color: var(--ink-muted); }
+        .file-name-display { font-size: 0.82rem; color: var(--gold); font-weight: 600; margin-top: 8px; }
+
+        /* ── HIDDEN FIELDS ── */
+        .hidden-field { display: none; }
+
+        /* ── SUBMIT ROW ── */
+        .submit-row {
+            display: flex; gap: 12px; flex-wrap: wrap;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+            margin-top: 24px;
+        }
+
+        .btn-submit {
+            background: var(--ink); color: var(--gold);
+            border: none; border-radius: 10px;
+            padding: 12px 28px;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 700; font-size: 0.92rem;
+            cursor: pointer; transition: all 0.22s;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .btn-submit:hover {
+            background: var(--ink-soft);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(11,15,26,0.15);
+        }
+
+        .btn-cancel {
+            background: transparent; color: var(--ink-muted);
+            border: 1px solid var(--border); border-radius: 10px;
+            padding: 12px 24px;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 500; font-size: 0.92rem;
+            text-decoration: none; transition: all 0.2s;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .btn-cancel:hover { border-color: var(--ink); color: var(--ink); }
+
+        /* ── TIPS CARD ── */
+        .tips-card {
+            background: var(--ink);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px; overflow: hidden;
+            position: sticky; top: 82px;
+        }
+
+        .tips-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        .tips-header-icon { color: var(--gold); font-size: 14px; }
+        .tips-header-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 0.95rem; font-weight: 700; color: #fff;
+        }
+
+        .tips-body { padding: 18px 20px; }
+
+        .tip-item {
+            display: flex; gap: 12px;
+            margin-bottom: 16px;
+            align-items: flex-start;
+        }
+        .tip-item:last-child { margin-bottom: 0; }
+
+        .tip-num {
+            width: 24px; height: 24px;
+            background: rgba(201,168,76,0.15);
+            border: 1px solid rgba(201,168,76,0.25);
+            border-radius: 7px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.72rem; font-weight: 800;
+            color: var(--gold); flex-shrink: 0;
+        }
+
+        .tip-text { font-size: 0.83rem; color: rgba(255,255,255,0.6); line-height: 1.6; }
+
+        /* Status tracker */
+        .status-tracker {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 12px; padding: 16px;
+            margin-top: 18px;
+        }
+
+        .tracker-title {
+            font-size: 0.72rem; font-weight: 700;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            color: var(--gold); margin-bottom: 14px;
+        }
+
+        .tracker-step {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 12px;
+        }
+        .tracker-step:last-child { margin-bottom: 0; }
+
+        .tracker-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: rgba(255,255,255,0.15); flex-shrink: 0;
+        }
+
+        .tracker-dot.active { background: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.2); }
+
+        .tracker-step-text { font-size: 0.8rem; color: rgba(255,255,255,0.5); }
+        .tracker-step-text.active { color: rgba(255,255,255,0.85); font-weight: 600; }
+
+        /* Animations */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in   { animation: fadeUp 0.5s ease both; }
+        .fade-in-1 { animation: fadeUp 0.5s 0.1s ease both; }
+        .fade-in-2 { animation: fadeUp 0.5s 0.2s ease both; }
+
+        @media (max-width: 768px) {
+            .page { padding: 16px; }
+            .priority-grid { grid-template-columns: repeat(2, 1fr); }
+            .navbar .container-fluid { padding: 0 16px; }
+            .tips-card { position: static; margin-top: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── NAVBAR ── -->
+<nav class="navbar">
+    <div class="container-fluid">
+        <a href="/" class="navbar-brand">
+            <div class="brand-icon">⚖</div>
+            <span class="brand-name">ResolveIQ</span>
+        </a>
+        <a href="/dashboard" class="btn-back-nav">
+            <i class="fa-solid fa-arrow-left"></i> Dashboard
+        </a>
+    </div>
+</nav>
+
+<!-- ── PAGE ── -->
+<div class="page">
+
+    <!-- BANNER -->
+    <div class="complaint-banner fade-in">
+        <div class="banner-inner">
+            <div class="banner-eyebrow">New Submission</div>
+            <div class="banner-title">Register a Complaint</div>
+            <div class="banner-sub">Fill in the details below so our team can review and resolve your issue quickly.</div>
+        </div>
+    </div>
+
+    <div class="row g-4 fade-in-1">
+
+        <!-- ── FORM ── -->
+        <div class="col-lg-8">
+            <div class="form-card">
+                <div class="form-card-header">
+                    <div class="form-card-icon"><i class="fa-solid fa-pen-to-square"></i></div>
+                    <div class="form-card-title">Complaint Details</div>
+                </div>
+                <div class="form-card-body">
+                    <form method="POST" enctype="multipart/form-data" id="complaint-form">
+
+                        <!-- Category -->
+                        <div class="form-row">
+                            <label class="form-lbl">Category <span class="req">*</span></label>
+                            <select name="category" id="category" class="form-sel" required onchange="updateIssues()">
+                                <option value="">Select a category</option>
+                                <option value="Electrical">⚡ Electrical</option>
+                                <option value="Plumbing">🔧 Plumbing</option>
+                                <option value="Network">📶 Network</option>
+                                <option value="Classroom">🏫 Classroom</option>
+                                <option value="Infrastructure">🏗️ Infrastructure</option>
+                                <option value="Other">✏️ Other</option>
+                            </select>
+                        </div>
+
+                        <!-- Common Issue -->
+                        <div class="form-row" id="issue-row">
+                            <label class="form-lbl">Common Issue</label>
+                            <select name="issue_type" id="issue_type" class="form-sel">
+                                <option value="">Select category first</option>
+                            </select>
+                        </div>
+
+                        <!-- Subject (Other only) -->
+                        <div class="form-row hidden-field" id="other-subject-box">
+                            <label class="form-lbl">Subject <span class="req">*</span></label>
+                            <input type="text" name="subject" id="subject" class="form-inp" placeholder="Briefly describe your complaint">
+                        </div>
+
+                        <!-- Description -->
+                        <div class="form-row hidden-field" id="description-box">
+                            <label class="form-lbl">Description</label>
+                            <textarea name="description" id="description" class="form-ta" placeholder="Provide more details — location, time, what happened..."></textarea>
+                        </div>
+
+                        <!-- Priority -->
+                        <div class="form-row">
+                            <label class="form-lbl">Priority <span class="req">*</span></label>
+                            <div class="priority-grid">
+                                <div>
+                                    <input type="radio" name="priority" id="p-low" value="Low" class="priority-option" required>
+                                    <label for="p-low" class="priority-label">
+                                        <span class="priority-icon">🟢</span>
+                                        <span class="priority-name">Low</span>
+                                        <span class="priority-desc">Not urgent</span>
+                                    </label>
+                                </div>
+                                <div>
+                                    <input type="radio" name="priority" id="p-medium" value="Medium" class="priority-option">
+                                    <label for="p-medium" class="priority-label">
+                                        <span class="priority-icon">🟡</span>
+                                        <span class="priority-name">Medium</span>
+                                        <span class="priority-desc">Moderate</span>
+                                    </label>
+                                </div>
+                                <div>
+                                    <input type="radio" name="priority" id="p-high" value="High" class="priority-option">
+                                    <label for="p-high" class="priority-label">
+                                        <span class="priority-icon">🟠</span>
+                                        <span class="priority-name">High</span>
+                                        <span class="priority-desc">Needs attention</span>
+                                    </label>
+                                </div>
+                                <div>
+                                    <input type="radio" name="priority" id="p-urgent" value="Urgent" class="priority-option">
+                                    <label for="p-urgent" class="priority-label">
+                                        <span class="priority-icon">🔴</span>
+                                        <span class="priority-name">Urgent</span>
+                                        <span class="priority-desc">Immediate</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- File Upload -->
+                        <div class="form-row">
+                            <label class="form-lbl">Attachment <span style="color:var(--ink-muted); font-weight:400;">(Optional)</span></label>
+                            <div class="file-drop" id="file-drop">
+                                <input type="file" name="file" id="file-input"
+                                    accept=".png,.jpg,.jpeg,.pdf,.doc,.docx"
+                                    onchange="showFileName(this)">
+                                <div class="file-drop-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                                <div class="file-drop-title">Click to upload or drag & drop</div>
+                                <div class="file-drop-sub">PNG, JPG, PDF, DOC, DOCX — max 10MB</div>
+                                <div class="file-name-display" id="file-name-display"></div>
+                            </div>
+                        </div>
+
+                        <!-- Submit -->
+                        <div class="submit-row">
+                            <button type="submit" class="btn-submit">
+                                <i class="fa-solid fa-paper-plane"></i> Submit Complaint
+                            </button>
+                            <a href="/dashboard" class="btn-cancel">
+                                <i class="fa-solid fa-arrow-left"></i> Cancel
+                            </a>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── TIPS ── -->
+        <div class="col-lg-4 fade-in-2">
+            <div class="tips-card">
+                <div class="tips-header">
+                    <i class="fa-solid fa-lightbulb tips-header-icon"></i>
+                    <div class="tips-header-title">Quick Tips</div>
+                </div>
+                <div class="tips-body">
+                    <div class="tip-item">
+                        <div class="tip-num">1</div>
+                        <div class="tip-text">Select the correct category so the complaint reaches the right team.</div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-num">2</div>
+                        <div class="tip-text">Use a clear subject or pick the closest common issue available.</div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-num">3</div>
+                        <div class="tip-text">Add a description with exact details — room number, block, or system affected.</div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-num">4</div>
+                        <div class="tip-text">Upload an image or document if you have proof of the issue.</div>
+                    </div>
+                    <div class="tip-item">
+                        <div class="tip-num">5</div>
+                        <div class="tip-text">Choose priority carefully — Urgent is for issues that need immediate action.</div>
+                    </div>
+
+                    <div class="status-tracker">
+                        <div class="tracker-title">What happens next</div>
+                        <div class="tracker-step">
+                            <div class="tracker-dot active"></div>
+                            <div class="tracker-step-text active">You submit the complaint</div>
+                        </div>
+                        <div class="tracker-step">
+                            <div class="tracker-dot"></div>
+                            <div class="tracker-step-text">Admin reviews your issue</div>
+                        </div>
+                        <div class="tracker-step">
+                            <div class="tracker-dot"></div>
+                            <div class="tracker-step-text">Status updated to In Progress</div>
+                        </div>
+                        <div class="tracker-step">
+                            <div class="tracker-dot"></div>
+                            <div class="tracker-step-text">You get notified by email</div>
+                        </div>
+                        <div class="tracker-step">
+                            <div class="tracker-dot"></div>
+                            <div class="tracker-step-text">Complaint marked Resolved ✓</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const issueData = {
+        "Electrical":     ["Fan not working", "Light not working", "Power socket damaged", "Switchboard issue", "No power supply"],
+        "Plumbing":       ["Water leak", "Tap not working", "Pipe damage", "Blocked drainage", "No water supply"],
+        "Network":        ["Wi-Fi not working", "Slow internet", "LAN port issue", "No connection"],
+        "Classroom":      ["Broken chair", "Broken desk", "Projector not working", "Board issue"],
+        "Infrastructure": ["Wall damage", "Ceiling leak", "Door problem", "Window damage"]
+    };
+
+    function updateIssues() {
+        const category       = document.getElementById("category").value;
+        const issueSelect    = document.getElementById("issue_type");
+        const issueRow       = document.getElementById("issue-row");
+        const otherSubject   = document.getElementById("other-subject-box");
+        const descriptionBox = document.getElementById("description-box");
+
+        issueSelect.innerHTML = '<option value="">Select issue</option>';
+
+        if (category === "Other") {
+            otherSubject.style.display   = "block";
+            descriptionBox.style.display = "block";
+            issueRow.style.display       = "none";
+            issueSelect.disabled         = true;
+        } else if (category !== "") {
+            otherSubject.style.display   = "none";
+            descriptionBox.style.display = "block";
+            issueRow.style.display       = "block";
+            issueSelect.disabled         = false;
+
+            issueData[category].forEach(issue => {
+                const opt = document.createElement("option");
+                opt.value = issue;
+                opt.text  = issue;
+                issueSelect.appendChild(opt);
+            });
+        } else {
+            otherSubject.style.display   = "none";
+            descriptionBox.style.display = "none";
+            issueRow.style.display       = "block";
+            issueSelect.disabled         = false;
+        }
+    }
+
+    function showFileName(input) {
+        const display  = document.getElementById("file-name-display");
+        const dropZone = document.getElementById("file-drop");
+        if (input.files && input.files[0]) {
+            display.textContent = "📎 " + input.files[0].name;
+            dropZone.classList.add("has-file");
+        } else {
+            display.textContent = "";
+            dropZone.classList.remove("has-file");
+        }
+    }
+</script>
+</body>
+</html>
