@@ -98,15 +98,26 @@ def init_db():
     """)
 
     # Add columns if upgrading from old DB
-    cur.execute("PRAGMA table_info(complaints)")
-    complaint_cols = [c[1] for c in cur.fetchall()]
-    for col, definition in [
-        ("file_path",   "TEXT"),
-        ("admin_remark","TEXT"),
-        ("assigned_to", "INTEGER DEFAULT NULL"),
-    ]:
-        if col not in complaint_cols:
-            cur.execute(f"ALTER TABLE complaints ADD COLUMN {col} {definition}")
+cur.execute("PRAGMA table_info(complaints)")
+complaint_cols = [c[1] for c in cur.fetchall()]
+
+if "category" not in complaint_cols:
+    cur.execute("ALTER TABLE complaints ADD COLUMN category TEXT")
+
+if "priority" not in complaint_cols:
+    cur.execute("ALTER TABLE complaints ADD COLUMN priority TEXT")
+
+if "created_at" not in complaint_cols:
+    cur.execute("ALTER TABLE complaints ADD COLUMN created_at TEXT")
+
+if "file_path" not in complaint_cols:
+    cur.execute("ALTER TABLE complaints ADD COLUMN file_path TEXT")
+
+if "admin_remark" not in complaint_cols:
+    cur.execute("ALTER TABLE complaints ADD COLUMN admin_remark TEXT")
+
+if "assigned_to" not in complaint_cols:
+    cur.execute("ALTER TABLE complaints ADD COLUMN assigned_to INTEGER DEFAULT NULL")
 
     cur.execute("PRAGMA table_info(users)")
     user_cols = [c[1] for c in cur.fetchall()]
