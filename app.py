@@ -174,7 +174,6 @@ def register():
         elif len(password) < 6:
             error = "Password must be at least 6 characters."
         else:
-            # ✅ Hash password before storing
             hashed = generate_password_hash(password)
 
             try:
@@ -190,8 +189,11 @@ def register():
             except sqlite3.IntegrityError:
                 error = "Email already exists!"
 
-    return render_template("register.html", error=error)
+            except Exception as e:
+                print("REGISTER ERROR:", e)
+                error = f"Something went wrong: {e}"
 
+    return render_template("register.html", error=error)
 
 # ================================================================
 #  LOGIN  (User + Admin + Agent)
