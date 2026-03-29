@@ -98,7 +98,7 @@ def init_db():
     """)
 
     # Add columns if upgrading from old DB
-    
+
     cur.execute("PRAGMA table_info(complaints)")
     complaint_cols = [c[1] for c in cur.fetchall()]
 
@@ -434,15 +434,21 @@ def delete_complaint(id):
 
 @app.route("/complaint/<int:id>")
 def complaint_details(id):
-    if "user_id" not in session:
+    if "user_id" not in session and "admin" not in session and "agent_id" not in session:
         return redirect(url_for("login"))
 
     conn = get_db()
 
-    complaint = conn.execute(
-        "SELECT * FROM complaints WHERE id = ? AND user_id = ?",
-        (id, session["user_id"])
-    ).fetchone()
+    if "user_id" in session:
+        complaint = conn.execute(
+            "SELECT * FROM complaints WHERE id = ? AND user_id = ?",
+            (id, session["user_id"])
+        ).fetchone()
+    else:
+        complaint = conn.execute(
+            "SELECT * FROM complaints WHERE id = ?",
+            (id,)
+        ).fetchone()
 
     if not complaint:
         conn.close()
@@ -458,7 +464,7 @@ def complaint_details(id):
     conn.close()
 
     complaint = tuple(complaint)
-    logs      = [tuple(l) for l in logs]
+    logs = [tuple(l) for l in logs]
 
     return render_template("complaint_details.html", complaint=complaint, logs=logs)
 
