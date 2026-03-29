@@ -323,10 +323,10 @@ def add_complaint():
         return redirect(url_for("login"))
 
     if request.method == "POST":
-        category   = (request.form.get("category")    or "").strip()
-        issue_type = (request.form.get("issue_type")  or "").strip()
-        description= (request.form.get("description") or "").strip()
-        priority   = (request.form.get("priority")    or "").strip()
+        category = (request.form.get("category") or "").strip()
+        issue_type = (request.form.get("issue_type") or "").strip()
+        description = (request.form.get("description") or "").strip()
+        priority = (request.form.get("priority") or "").strip()
 
         if category == "Other":
             subject = (request.form.get("subject") or "").strip()
@@ -337,19 +337,23 @@ def add_complaint():
             if not subject:
                 return "Please select a common issue."
 
-        file      = request.files.get("file")
+        file = request.files.get("file")
         file_path = None
 
         if file and file.filename != "":
             if allowed_file(file.filename):
-                filename  = secure_filename(file.filename)
+                filename = secure_filename(file.filename)
+
+                # IMPORTANT: ensure folder exists
+                os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+
                 file_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
                 file.save(file_path)
             else:
                 return "Invalid file type."
 
         conn = get_db()
-        cur  = conn.cursor()
+        cur = conn.cursor()
 
         cur.execute("""
             INSERT INTO complaints (user_id, subject, description, category, priority, file_path)
@@ -367,49 +371,14 @@ def add_complaint():
         conn.close()
 
         # Email notifications
-        _send_complaint_emails(complaint_id, subject, category, priority, description)
+        try:
+            _send_complaint_emails(complaint_id, subject, category, priority, description)
+        except Exception as e:
+            print("Email failed:", e)
 
         return redirect(url_for("dashboard"))
 
     return render_template("add_complaint.html")
-
-
-def _send_complaint_emails(complaint_id, subject, category, priority, description):
-    admin_html = f"""
-    <html><body style="font-family:Arial,sans-serif;background:#f8fafc;padding:20px;color:#0f172a;">
-    <div style="max-width:600px;margin:auto;background:white;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;">
-        <div style="background:#1e293b;color:white;padding:18px 24px;">
-            <h2 style="margin:0;font-size:20px;">New Complaint — CMP-{complaint_id:03d}</h2>
-        </div>
-        <div style="padding:24px;">
-            <table style="width:100%;border-collapse:collapse;">
-                <tr><td style="padding:10px;border:1px solid #e2e8f0;"><strong>ID</strong></td><td style="padding:10px;border:1px solid #e2e8f0;">CMP-{complaint_id:03d}</td></tr>
-                <tr><td style="padding:10px;border:1px solid #e2e8f0;"><strong>Subject</strong></td><td style="padding:10px;border:1px solid #e2e8f0;">{subject}</td></tr>
-                <tr><td style="padding:10px;border:1px solid #e2e8f0;"><strong>Category</strong></td><td style="padding:10px;border:1px solid #e2e8f0;">{category}</td></tr>
-                <tr><td style="padding:10px;border:1px solid #e2e8f0;"><strong>Priority</strong></td><td style="padding:10px;border:1px solid #e2e8f0;">{priority}</td></tr>
-            </table>
-            <div style="margin-top:16px;background:#f8fafc;border:1px solid #e2e8f0;padding:14px;border-radius:10px;">{description or 'No description'}</div>
-        </div>
-    </div></body></html>
-    """
-    send_email(ADMIN_EMAIL, f"New Complaint — CMP-{complaint_id:03d}", "", admin_html)
-
-    user_email = session.get("user_email")
-    if user_email:
-        user_html = f"""
-        <html><body style="font-family:Arial,sans-serif;background:#f8fafc;padding:20px;">
-        <div style="max-width:600px;margin:auto;background:white;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;">
-            <div style="background:#1e293b;color:white;padding:18px 24px;">
-                <h2 style="margin:0;">Complaint Submitted ✓</h2>
-            </div>
-            <div style="padding:24px;">
-                <p>Your complaint <strong>CMP-{complaint_id:03d}</strong> has been registered successfully.</p>
-                <p>Status: <strong>Pending</strong> — We'll notify you when it's updated.</p>
-            </div>
-        </div></body></html>
-        """
-        send_email(user_email, f"Complaint Submitted — CMP-{complaint_id:03d}", "", user_html)
-
 
 # ================================================================
 #  DELETE COMPLAINT
