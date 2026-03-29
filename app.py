@@ -10,14 +10,18 @@ from werkzeug.security import generate_password_hash, check_password_hash
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "change-this-in-production")
 
+# ---------------- PATHS ---------------- #
+
+BASE_DIR = app.root_path
+DB_PATH = os.path.join(BASE_DIR, "database.db")
+UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads")
+
 # ---------------- FILE UPLOAD ---------------- #
 
-UPLOAD_FOLDER = "static/uploads"
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "pdf", "doc", "docx"}
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
 def allowed_file(filename):
@@ -26,20 +30,24 @@ def allowed_file(filename):
 
 # ---------------- EMAIL CONFIG ---------------- #
 
-EMAIL_ADDRESS = os.environ.get("EMAIL_ADDRESS", "ajuarjun356@gmail.com")
-EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD", "bxpz kpkr lceb zpod")
-ADMIN_EMAIL    = os.environ.get("ADMIN_EMAIL",   "admin@cms.com")
+EMAIL_ADDRESS = os.environ.get("EMAIL_ADDRESS", "")
+EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD", "")
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@cms.com")
 
 
 def send_email(to_email, subject, message, html_message=None):
+    if not EMAIL_ADDRESS or not EMAIL_PASSWORD:
+        print("Email skipped: EMAIL_ADDRESS or EMAIL_PASSWORD not set")
+        return
+
     try:
         msg = MIMEText(
             html_message if html_message else message,
             "html" if html_message else "plain"
         )
         msg["Subject"] = subject
-        msg["From"]    = EMAIL_ADDRESS
-        msg["To"]      = to_email
+        msg["From"] = EMAIL_ADDRESS
+        msg["To"] = to_email
 
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
@@ -54,10 +62,13 @@ def send_email(to_email, subject, message, html_message=None):
 # ---------------- DATABASE ---------------- #
 
 def init_db():
-    conn = sqlite3.connect("database.db")
-    cur  = conn.cursor()
+    conn = sqlite3.connect(DB_PATH, timeout=10, check_same_thread=False)
+    cur = conn.cursor()
 
-    # Users table — now includes 'role' column
+    # Helps reduce locking issues
+    cur.execute("PRAGMA journal_mode=WAL")
+
+    # Users table
     cur.execute("""
     CREATE TABLE IF NOT EXISTS users (
         id       INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -97,8 +108,7 @@ def init_db():
     )
     """)
 
-    # Add columns if upgrading from old DB
-
+    # Add columns if upgrading old DB
     cur.execute("PRAGMA table_info(complaints)")
     complaint_cols = [c[1] for c in cur.fetchall()]
 
@@ -137,18 +147,14 @@ def init_db():
 init_db()
 
 
-# ================================================================
-#  HELPER — shared DB query
-# ================================================================
-
 def get_db():
-    conn = sqlite3.connect("database.db")
+    conn = sqlite3.connect(DB_PATH, timeout=10, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
 
 
 # ================================================================
-#  HOME
+# HOME
 # ================================================================
 
 @app.route("/")
@@ -157,7 +163,7 @@ def home():
 
 
 # ================================================================
-#  REGISTER
+# REGISTER
 # ================================================================
 
 @app.route("/register", methods=["GET", "POST"])
@@ -165,8 +171,8 @@ def register():
     error = None
 
     if request.method == "POST":
-        name     = (request.form.get("name")     or "").strip()
-        email    = (request.form.get("email")    or "").strip()
+        name = (request.form.get("name") or "").strip()
+        email = (request.form.get("email") or "").strip()
         password = (request.form.get("password") or "").strip()
 
         if not name or not email or not password:
@@ -175,6 +181,7 @@ def register():
             error = "Password must be at least 6 characters."
         else:
             hashed = generate_password_hash(password)
+            conn = None
 
             try:
                 conn = get_db()
@@ -183,7 +190,6 @@ def register():
                     (name, email, hashed)
                 )
                 conn.commit()
-                conn.close()
                 return redirect(url_for("login"))
 
             except sqlite3.IntegrityError:
@@ -193,10 +199,15 @@ def register():
                 print("REGISTER ERROR:", e)
                 error = f"Something went wrong: {e}"
 
+            finally:
+                if conn:
+                    conn.close()
+
     return render_template("register.html", error=error)
 
+
 # ================================================================
-#  LOGIN  (User + Admin + Agent)
+# LOGIN (User + Admin + Agent)
 # ================================================================
 
 @app.route("/login", methods=["GET", "POST"])
@@ -204,12 +215,11 @@ def login():
     error = None
 
     if request.method == "POST":
-        role     = request.form.get("role")
-        email    = (request.form.get("email")    or "").strip()
+        role = request.form.get("role")
+        email = (request.form.get("email") or "").strip()
         password = (request.form.get("password") or "").strip()
 
         if role == "admin":
-            # Admin uses hardcoded credentials (no DB)
             if email == "admin@cms.com" and password == "admin123":
                 session.clear()
                 session["admin"] = True
@@ -219,15 +229,17 @@ def login():
 
         elif role == "agent":
             conn = get_db()
-            user = conn.execute(
-                "SELECT * FROM users WHERE email = ? AND role = 'agent'", (email,)
-            ).fetchone()
-            conn.close()
+            try:
+                user = conn.execute(
+                    "SELECT * FROM users WHERE email = ? AND role = 'agent'", (email,)
+                ).fetchone()
+            finally:
+                conn.close()
 
             if user and check_password_hash(user["password"], password):
                 session.clear()
-                session["agent_id"]    = user["id"]
-                session["agent_name"]  = user["name"]
+                session["agent_id"] = user["id"]
+                session["agent_name"] = user["name"]
                 session["agent_email"] = user["email"]
                 return redirect(url_for("agent_dashboard"))
             else:
@@ -235,15 +247,17 @@ def login():
 
         else:
             conn = get_db()
-            user = conn.execute(
-                "SELECT * FROM users WHERE email = ? AND role = 'user'", (email,)
-            ).fetchone()
-            conn.close()
+            try:
+                user = conn.execute(
+                    "SELECT * FROM users WHERE email = ? AND role = 'user'", (email,)
+                ).fetchone()
+            finally:
+                conn.close()
 
             if user and check_password_hash(user["password"], password):
                 session.clear()
-                session["user_id"]    = user["id"]
-                session["user_name"]  = user["name"]
+                session["user_id"] = user["id"]
+                session["user_name"] = user["name"]
                 session["user_email"] = user["email"]
                 return redirect(url_for("dashboard"))
             else:
@@ -253,7 +267,7 @@ def login():
 
 
 # ================================================================
-#  ADMIN LOGIN (separate route)
+# ADMIN LOGIN
 # ================================================================
 
 @app.route("/admin_login", methods=["GET", "POST"])
@@ -261,7 +275,7 @@ def admin_login():
     error = None
 
     if request.method == "POST":
-        email    = (request.form.get("email")    or "").strip()
+        email = (request.form.get("email") or "").strip()
         password = (request.form.get("password") or "").strip()
 
         if email == "admin@cms.com" and password == "admin123":
@@ -274,7 +288,7 @@ def admin_login():
 
 
 # ================================================================
-#  USER DASHBOARD
+# USER DASHBOARD
 # ================================================================
 
 @app.route("/dashboard")
@@ -283,28 +297,28 @@ def dashboard():
         return redirect(url_for("login"))
 
     search = (request.args.get("search") or "").strip()
-    conn   = get_db()
+    conn = get_db()
 
-    if search:
-        complaints = conn.execute("""
-            SELECT * FROM complaints
-            WHERE user_id = ?
-            AND (subject LIKE ? OR category LIKE ? OR priority LIKE ? OR status LIKE ? OR admin_remark LIKE ?)
-            ORDER BY id DESC
-        """, (
-            session["user_id"],
-            f"%{search}%", f"%{search}%", f"%{search}%", f"%{search}%", f"%{search}%"
-        )).fetchall()
-    else:
-        complaints = conn.execute("""
-            SELECT * FROM complaints
-            WHERE user_id = ?
-            ORDER BY id DESC
-        """, (session["user_id"],)).fetchall()
+    try:
+        if search:
+            complaints = conn.execute("""
+                SELECT * FROM complaints
+                WHERE user_id = ?
+                AND (subject LIKE ? OR category LIKE ? OR priority LIKE ? OR status LIKE ? OR admin_remark LIKE ?)
+                ORDER BY id DESC
+            """, (
+                session["user_id"],
+                f"%{search}%", f"%{search}%", f"%{search}%", f"%{search}%", f"%{search}%"
+            )).fetchall()
+        else:
+            complaints = conn.execute("""
+                SELECT * FROM complaints
+                WHERE user_id = ?
+                ORDER BY id DESC
+            """, (session["user_id"],)).fetchall()
+    finally:
+        conn.close()
 
-    conn.close()
-
-    # Convert to list of tuples for Jinja2 index access (c[0], c[6] etc.)
     complaints = [tuple(c) for c in complaints]
 
     return render_template(
@@ -316,7 +330,7 @@ def dashboard():
 
 
 # ================================================================
-#  ADD COMPLAINT
+# ADD COMPLAINT
 # ================================================================
 
 @app.route("/add_complaint", methods=["GET", "POST"])
@@ -345,34 +359,39 @@ def add_complaint():
         if file and file.filename != "":
             if allowed_file(file.filename):
                 filename = secure_filename(file.filename)
-
-                # IMPORTANT: ensure folder exists
                 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
-
                 file_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
                 file.save(file_path)
             else:
                 return "Invalid file type."
 
-        conn = get_db()
-        cur = conn.cursor()
+        conn = None
+        try:
+            conn = get_db()
+            cur = conn.cursor()
 
-        cur.execute("""
-            INSERT INTO complaints (user_id, subject, description, category, priority, file_path)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, (session["user_id"], subject, description, category, priority, file_path))
+            cur.execute("""
+                INSERT INTO complaints (user_id, subject, description, category, priority, file_path)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (session["user_id"], subject, description, category, priority, file_path))
 
-        complaint_id = cur.lastrowid
+            complaint_id = cur.lastrowid
 
-        cur.execute("""
-            INSERT INTO complaint_logs (complaint_id, status, remark, updated_by)
-            VALUES (?, 'Pending', 'Complaint submitted', 'System')
-        """, (complaint_id,))
+            cur.execute("""
+                INSERT INTO complaint_logs (complaint_id, status, remark, updated_by)
+                VALUES (?, 'Pending', 'Complaint submitted', 'System')
+            """, (complaint_id,))
 
-        conn.commit()
-        conn.close()
+            conn.commit()
 
-        # Email notifications
+        except Exception as e:
+            print("ADD COMPLAINT ERROR:", e)
+            return render_template("error.html", message=f"Complaint submit failed: {e}")
+
+        finally:
+            if conn:
+                conn.close()
+
         try:
             _send_complaint_emails(complaint_id, subject, category, priority, description)
         except Exception as e:
@@ -382,8 +401,46 @@ def add_complaint():
 
     return render_template("add_complaint.html")
 
+
+def _send_complaint_emails(complaint_id, subject, category, priority, description):
+    admin_html = f"""
+    <html><body style="font-family:Arial,sans-serif;background:#f8fafc;padding:20px;color:#0f172a;">
+    <div style="max-width:600px;margin:auto;background:white;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;">
+        <div style="background:#1e293b;color:white;padding:18px 24px;">
+            <h2 style="margin:0;font-size:20px;">New Complaint — CMP-{complaint_id:03d}</h2>
+        </div>
+        <div style="padding:24px;">
+            <table style="width:100%;border-collapse:collapse;">
+                <tr><td style="padding:10px;border:1px solid #e2e8f0;"><strong>ID</strong></td><td style="padding:10px;border:1px solid #e2e8f0;">CMP-{complaint_id:03d}</td></tr>
+                <tr><td style="padding:10px;border:1px solid #e2e8f0;"><strong>Subject</strong></td><td style="padding:10px;border:1px solid #e2e8f0;">{subject}</td></tr>
+                <tr><td style="padding:10px;border:1px solid #e2e8f0;"><strong>Category</strong></td><td style="padding:10px;border:1px solid #e2e8f0;">{category}</td></tr>
+                <tr><td style="padding:10px;border:1px solid #e2e8f0;"><strong>Priority</strong></td><td style="padding:10px;border:1px solid #e2e8f0;">{priority}</td></tr>
+            </table>
+            <div style="margin-top:16px;background:#f8fafc;border:1px solid #e2e8f0;padding:14px;border-radius:10px;">{description or 'No description'}</div>
+        </div>
+    </div></body></html>
+    """
+    send_email(ADMIN_EMAIL, f"New Complaint — CMP-{complaint_id:03d}", "", admin_html)
+
+    user_email = session.get("user_email")
+    if user_email:
+        user_html = f"""
+        <html><body style="font-family:Arial,sans-serif;background:#f8fafc;padding:20px;">
+        <div style="max-width:600px;margin:auto;background:white;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;">
+            <div style="background:#1e293b;color:white;padding:18px 24px;">
+                <h2 style="margin:0;">Complaint Submitted ✓</h2>
+            </div>
+            <div style="padding:24px;">
+                <p>Your complaint <strong>CMP-{complaint_id:03d}</strong> has been registered successfully.</p>
+                <p>Status: <strong>Pending</strong> — We'll notify you when it's updated.</p>
+            </div>
+        </div></body></html>
+        """
+        send_email(user_email, f"Complaint Submitted — CMP-{complaint_id:03d}", "", user_html)
+
+
 # ================================================================
-#  DELETE COMPLAINT
+# DELETE COMPLAINT
 # ================================================================
 
 @app.route("/delete_complaint/<int:id>")
@@ -392,15 +449,17 @@ def delete_complaint(id):
         return redirect(url_for("login"))
 
     conn = get_db()
-    conn.execute("DELETE FROM complaints WHERE id = ? AND user_id = ?", (id, session["user_id"]))
-    conn.commit()
-    conn.close()
+    try:
+        conn.execute("DELETE FROM complaints WHERE id = ? AND user_id = ?", (id, session["user_id"]))
+        conn.commit()
+    finally:
+        conn.close()
 
     return redirect(url_for("dashboard"))
 
 
 # ================================================================
-#  COMPLAINT DETAILS
+# COMPLAINT DETAILS
 # ================================================================
 
 @app.route("/complaint/<int:id>")
@@ -410,29 +469,29 @@ def complaint_details(id):
 
     conn = get_db()
 
-    if "user_id" in session:
-        complaint = conn.execute(
-            "SELECT * FROM complaints WHERE id = ? AND user_id = ?",
-            (id, session["user_id"])
-        ).fetchone()
-    else:
-        complaint = conn.execute(
-            "SELECT * FROM complaints WHERE id = ?",
-            (id,)
-        ).fetchone()
+    try:
+        if "user_id" in session:
+            complaint = conn.execute(
+                "SELECT * FROM complaints WHERE id = ? AND user_id = ?",
+                (id, session["user_id"])
+            ).fetchone()
+        else:
+            complaint = conn.execute(
+                "SELECT * FROM complaints WHERE id = ?",
+                (id,)
+            ).fetchone()
 
-    if not complaint:
+        if not complaint:
+            return render_template("error.html", message="Complaint not found.")
+
+        logs = conn.execute("""
+            SELECT status, remark, updated_by, updated_at
+            FROM complaint_logs
+            WHERE complaint_id = ?
+            ORDER BY updated_at DESC, id DESC
+        """, (id,)).fetchall()
+    finally:
         conn.close()
-        return render_template("error.html", message="Complaint not found.")
-
-    logs = conn.execute("""
-        SELECT status, remark, updated_by, updated_at
-        FROM complaint_logs
-        WHERE complaint_id = ?
-        ORDER BY updated_at DESC, id DESC
-    """, (id,)).fetchall()
-
-    conn.close()
 
     complaint = tuple(complaint)
     logs = [tuple(l) for l in logs]
@@ -441,7 +500,7 @@ def complaint_details(id):
 
 
 # ================================================================
-#  ADMIN DASHBOARD
+# ADMIN DASHBOARD
 # ================================================================
 
 @app.route("/admin")
@@ -450,51 +509,50 @@ def admin():
         return redirect(url_for("admin_login"))
 
     conn = get_db()
+    try:
+        complaints = conn.execute("""
+            SELECT
+                complaints.id,
+                complaints.user_id,
+                complaints.subject,
+                complaints.description,
+                complaints.category,
+                complaints.priority,
+                complaints.status,
+                complaints.created_at,
+                complaints.file_path,
+                complaints.admin_remark,
+                complaints.assigned_to,
+                users.name  AS user_name,
+                users.email AS user_email
+            FROM complaints
+            JOIN users ON complaints.user_id = users.id
+            ORDER BY complaints.id DESC
+        """).fetchall()
 
-    complaints = conn.execute("""
-        SELECT
-            complaints.id,
-            complaints.user_id,
-            complaints.subject,
-            complaints.description,
-            complaints.category,
-            complaints.priority,
-            complaints.status,
-            complaints.created_at,
-            complaints.file_path,
-            complaints.admin_remark,
-            complaints.assigned_to,
-            users.name  AS user_name,
-            users.email AS user_email
-        FROM complaints
-        JOIN users ON complaints.user_id = users.id
-        ORDER BY complaints.id DESC
-    """).fetchall()
+        complaints = [dict(c) for c in complaints]
 
-    complaints = [dict(c) for c in complaints]
+        total_count = conn.execute("SELECT COUNT(*) FROM complaints").fetchone()[0]
+        pending_count = conn.execute("SELECT COUNT(*) FROM complaints WHERE status = 'Pending'").fetchone()[0]
+        in_progress_count = conn.execute("SELECT COUNT(*) FROM complaints WHERE status = 'In Progress'").fetchone()[0]
+        resolved_count = conn.execute("SELECT COUNT(*) FROM complaints WHERE status = 'Resolved'").fetchone()[0]
+        important_count = conn.execute("SELECT COUNT(*) FROM complaints WHERE priority IN ('High','Urgent')").fetchone()[0]
 
-    total_count       = conn.execute("SELECT COUNT(*) FROM complaints").fetchone()[0]
-    pending_count     = conn.execute("SELECT COUNT(*) FROM complaints WHERE status = 'Pending'").fetchone()[0]
-    in_progress_count = conn.execute("SELECT COUNT(*) FROM complaints WHERE status = 'In Progress'").fetchone()[0]
-    resolved_count    = conn.execute("SELECT COUNT(*) FROM complaints WHERE status = 'Resolved'").fetchone()[0]
-    important_count   = conn.execute("SELECT COUNT(*) FROM complaints WHERE priority IN ('High','Urgent')").fetchone()[0]
+        today = date.today().isoformat()
+        today_count = conn.execute(
+            "SELECT COUNT(*) FROM complaints WHERE DATE(created_at) = ?", (today,)
+        ).fetchone()[0]
 
-    today       = date.today().isoformat()
-    today_count = conn.execute(
-        "SELECT COUNT(*) FROM complaints WHERE DATE(created_at) = ?", (today,)
-    ).fetchone()[0]
+        category_summary = [dict(r) for r in conn.execute("""
+            SELECT category, COUNT(*) as count
+            FROM complaints GROUP BY category ORDER BY count DESC
+        """).fetchall()]
 
-    category_summary = [dict(r) for r in conn.execute("""
-        SELECT category, COUNT(*) as count
-        FROM complaints GROUP BY category ORDER BY count DESC
-    """).fetchall()]
-
-    # Agents list for assignment dropdown
-    agents = [dict(r) for r in conn.execute(
-        "SELECT id, name, email FROM users WHERE role = 'agent' ORDER BY name"
-    ).fetchall()]
-
-    conn.close()
+        agents = [dict(r) for r in conn.execute(
+            "SELECT id, name, email FROM users WHERE role = 'agent' ORDER BY name"
+        ).fetchall()]
+    finally:
+        conn.close()
 
     return render_template(
         "admin.html",
@@ -511,7 +569,7 @@ def admin():
 
 
 # ================================================================
-#  UPDATE COMPLAINT (Admin)
+# UPDATE COMPLAINT (Admin / Agent)
 # ================================================================
 
 @app.route("/update_complaint/<int:id>", methods=["POST"])
@@ -519,40 +577,39 @@ def update_complaint(id):
     if "admin" not in session and "agent_id" not in session:
         return redirect(url_for("login"))
 
-    status      = (request.form.get("status")      or "Pending").strip()
-    remark      = (request.form.get("remark")      or "").strip()
+    status = (request.form.get("status") or "Pending").strip()
+    remark = (request.form.get("remark") or "").strip()
     assigned_to = request.form.get("assigned_to")
-    updated_by  = "Admin" if "admin" in session else session.get("agent_name", "Agent")
+    updated_by = "Admin" if "admin" in session else session.get("agent_name", "Agent")
 
     conn = get_db()
+    try:
+        row = conn.execute("""
+            SELECT users.email, complaints.subject
+            FROM complaints JOIN users ON complaints.user_id = users.id
+            WHERE complaints.id = ?
+        """, (id,)).fetchone()
 
-    # Get user email for notification
-    row = conn.execute("""
-        SELECT users.email, complaints.subject
-        FROM complaints JOIN users ON complaints.user_id = users.id
-        WHERE complaints.id = ?
-    """, (id,)).fetchone()
+        if assigned_to:
+            conn.execute("""
+                UPDATE complaints SET status = ?, admin_remark = ?, assigned_to = ? WHERE id = ?
+            """, (status, remark, assigned_to, id))
+        else:
+            conn.execute("""
+                UPDATE complaints SET status = ?, admin_remark = ? WHERE id = ?
+            """, (status, remark, id))
 
-    if assigned_to:
         conn.execute("""
-            UPDATE complaints SET status = ?, admin_remark = ?, assigned_to = ? WHERE id = ?
-        """, (status, remark, assigned_to, id))
-    else:
-        conn.execute("""
-            UPDATE complaints SET status = ?, admin_remark = ? WHERE id = ?
-        """, (status, remark, id))
+            INSERT INTO complaint_logs (complaint_id, status, remark, updated_by)
+            VALUES (?, ?, ?, ?)
+        """, (id, status, remark, updated_by))
 
-    conn.execute("""
-        INSERT INTO complaint_logs (complaint_id, status, remark, updated_by)
-        VALUES (?, ?, ?, ?)
-    """, (id, status, remark, updated_by))
+        conn.commit()
+    finally:
+        conn.close()
 
-    conn.commit()
-    conn.close()
-
-    # Notify user by email
     if row:
-        user_email        = row["email"]
+        user_email = row["email"]
         complaint_subject = row["subject"]
 
         html_message = f"""
@@ -568,14 +625,17 @@ def update_complaint(id):
             </div>
         </div></body></html>
         """
-        send_email(user_email, f"Complaint Update — CMP-{id:03d}", "", html_message)
+        try:
+            send_email(user_email, f"Complaint Update — CMP-{id:03d}", "", html_message)
+        except Exception as e:
+            print("Update email failed:", e)
 
     redirect_to = "agent_dashboard" if "agent_id" in session else "admin"
     return redirect(url_for(redirect_to))
 
 
 # ================================================================
-#  AGENT DASHBOARD
+# AGENT DASHBOARD
 # ================================================================
 
 @app.route("/agent")
@@ -584,35 +644,34 @@ def agent_dashboard():
         return redirect(url_for("login"))
 
     conn = get_db()
+    try:
+        complaints = conn.execute("""
+            SELECT
+                complaints.id,
+                complaints.subject,
+                complaints.description,
+                complaints.category,
+                complaints.priority,
+                complaints.status,
+                complaints.created_at,
+                complaints.file_path,
+                complaints.admin_remark,
+                users.name  AS user_name,
+                users.email AS user_email
+            FROM complaints
+            JOIN users ON complaints.user_id = users.id
+            WHERE complaints.assigned_to = ?
+            ORDER BY complaints.id DESC
+        """, (session["agent_id"],)).fetchall()
 
-    # Agents only see complaints assigned to them
-    complaints = conn.execute("""
-        SELECT
-            complaints.id,
-            complaints.subject,
-            complaints.description,
-            complaints.category,
-            complaints.priority,
-            complaints.status,
-            complaints.created_at,
-            complaints.file_path,
-            complaints.admin_remark,
-            users.name  AS user_name,
-            users.email AS user_email
-        FROM complaints
-        JOIN users ON complaints.user_id = users.id
-        WHERE complaints.assigned_to = ?
-        ORDER BY complaints.id DESC
-    """, (session["agent_id"],)).fetchall()
+        complaints = [dict(c) for c in complaints]
+    finally:
+        conn.close()
 
-    complaints = [dict(c) for c in complaints]
-
-    total      = len(complaints)
-    pending    = sum(1 for c in complaints if c["status"] == "Pending")
-    in_prog    = sum(1 for c in complaints if c["status"] == "In Progress")
-    resolved   = sum(1 for c in complaints if c["status"] == "Resolved")
-
-    conn.close()
+    total = len(complaints)
+    pending = sum(1 for c in complaints if c["status"] == "Pending")
+    in_prog = sum(1 for c in complaints if c["status"] == "In Progress")
+    resolved = sum(1 for c in complaints if c["status"] == "Resolved")
 
     return render_template(
         "agent_dashboard.html",
@@ -626,7 +685,7 @@ def agent_dashboard():
 
 
 # ================================================================
-#  ADMIN — CREATE AGENT ACCOUNT
+# ADMIN — CREATE AGENT ACCOUNT
 # ================================================================
 
 @app.route("/admin/create_agent", methods=["GET", "POST"])
@@ -634,18 +693,19 @@ def create_agent():
     if "admin" not in session:
         return redirect(url_for("admin_login"))
 
-    error   = None
+    error = None
     success = None
 
     if request.method == "POST":
-        name     = (request.form.get("name")     or "").strip()
-        email    = (request.form.get("email")    or "").strip()
+        name = (request.form.get("name") or "").strip()
+        email = (request.form.get("email") or "").strip()
         password = (request.form.get("password") or "").strip()
 
         if not name or not email or not password:
             error = "All fields are required."
         else:
             hashed = generate_password_hash(password)
+            conn = None
             try:
                 conn = get_db()
                 conn.execute(
@@ -653,16 +713,21 @@ def create_agent():
                     (name, email, hashed)
                 )
                 conn.commit()
-                conn.close()
                 success = f"Agent '{name}' created successfully!"
             except sqlite3.IntegrityError:
                 error = "Email already exists."
+            except Exception as e:
+                print("CREATE AGENT ERROR:", e)
+                error = f"Something went wrong: {e}"
+            finally:
+                if conn:
+                    conn.close()
 
     return render_template("create_agent.html", error=error, success=success)
 
 
 # ================================================================
-#  LOGOUT
+# LOGOUT
 # ================================================================
 
 @app.route("/logout")
@@ -672,7 +737,7 @@ def logout():
 
 
 # ================================================================
-#  CLOUD DEPLOY READY
+# CLOUD DEPLOY READY
 # ================================================================
 
 if __name__ == "__main__":
